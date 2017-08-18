@@ -1,0 +1,33 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:nil
+#+OPTIONS: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:nil e:t email:nil
+#+OPTIONS: f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:nil title:t toc:nil todo:t |:t
+#+TITLE: Flytdiagram eksample for NorKog
+#+DATE: <2017-08-16 on.>
+#+AUTHOR: Yusman Kamaleri
+#+EMAIL: ybkamaleri@gmail.com
+#+LANGUAGE: no
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.1.1 (Org mode 9.0.9)
+
+
+#+BEGIN_SRC plantuml :file chart01.png :exports results
+  @startuml
+  :Patient: --> (Demografisk data)
+  :Patient: .> (PROM Skjema) : legge inn data
+  :Pårørende1: .> (Skjema6) : legge inn data
+  (Skjema6) --> (Komplett datasett)
+  (PROM Skjema) --> (Komplett datasett)
+  :Registrator: .> (Demografisk data) : legge inn data
+  (Demografisk data) --> (Skjema1 \nSkjema2)
+  :lege1: .> (Skjema1 \nSkjema2) : legge inn data
+  (Skjema1 \nSkjema2) --> (Skjema3 \nSkjema4 \nSkjema5)
+  :lege2: .> (Skjema3 \nSkjema4 \nSkjema5) : legge inn data
+  (Skjema3 \nSkjema4 \nSkjema5) --> (Komplett datasett)
+  (Komplett datasett) --> (Rapport) : data utrekk
+  @enduml
+#+END_SRC
+
+#+RESULTS:
+[[file:chart01.png]]
