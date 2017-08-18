@@ -1,0 +1,62 @@
+
+```{r file, echo=FALSE, warnings=FALSE, include=FALSE, message=FALSE}
+rm(list = ls())
+
+## henter pakker eller installere om ikke finnes
+inspak <- function(pkg){
+  nypkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(nypkg))
+    install.packages(nypkg, dependencies = TRUE)
+
+}
+
+pakke <- c("data.table", "dplyr", "ggplot2", "tidyr", "grid", "knitr")
+inspak(pakke)
+
+## Upload libraries
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(grid)
+library(tidyr)
+
+
+############
+## DATA
+############
+filDir <- getwd()
+sr01 <- paste0(filDir,"/", "datakilder1.R")
+sr02 <- paste0(filDir, "/", "datakilder2.R")
+##ifelse(file.exists(sr01), source(sr01), source(sr02))
+data <- ifelse(file.exists(sr01), sr01, sr02)
+source(data)
+
+```
+
+---
+title: Rapport for NorKog
+date: `r format(Sys.Date(), "%d %b. %Y")`
+---
+
+# Antall inkluderte per senter
+
+```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center', fig.height=3}
+sentfil <- paste0(filDir, "/doc/senter.csv")
+senter <- data.table::fread(sentfil, header = TRUE, encoding = "Latin-1")
+
+sentdata <- RegData[, .N, by = SENTER]
+
+
+gg.fig1 <- ggplot(sentdata, aes(SENTER, N)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+gg.fig01T <- ggplot_gtable(ggplot_build(gg.fig1))
+gg.fig01T$layout$clip[gg.fig01T$layout$name == "panel"] <- "off"
+grid.draw(gg.fig01T)
+
+```
+
+
+
