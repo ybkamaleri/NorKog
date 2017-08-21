@@ -32,6 +32,16 @@ sr02 <- paste0(filDir, "/", "datakilder2.R")
 data <- ifelse(file.exists(sr01), sr01, sr02)
 source(data)
 
+
+###########
+## FARGER
+###########
+ColPoint <- "#FF3333" #farge for point
+cols <- c("#99CCFF", "#0066CC", "#003366") #farge for flere bar
+colb <- "#99CCFF" #farge for en søyle
+options(digits = 3)
+
+
 ```
 
 ---
@@ -41,21 +51,57 @@ date: `r format(Sys.Date(), "%d %b. %Y")`
 
 # Antall inkluderte per senter
 
-```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center', fig.height=3}
+```{r fig01data, echo=FALSE, message=FALSE, warning=FALSE}
+
+## Lister av navn for sentrene
 sentfil <- paste0(filDir, "/doc/senter.csv")
 senter <- data.table::fread(sentfil, header = TRUE, encoding = "Latin-1")
 
+sn <- dim(senter)[1] #antall sentre
 sentdata <- RegData[, .N, by = SENTER]
+NN <- dim(RegData)[1] #antall pasienter i datasettet
 
+## gi felles variable navn til senterkode før sammenslåing
+setnames(sentdata, 1, "v1")
+setnames(senter, 1, "v1")
+setkey(sentdata, v1)
+setkey(senter, v1)
 
-gg.fig1 <- ggplot(sentdata, aes(SENTER, N)) +
-  geom_bar(stat = "identity") +
-  coord_flip()
+## Merge
+fig01Data <- merge(senter, sentdata, all.x = TRUE)
+missn <- fig01Data[is.na(N), .N] #antall senter med misssing data
+fig01Data <- fig01Data[is.na(N), N := 0]
+
+inkn <- sn - missn #antall senter uten missing data
+
+```
+
+Det er bare `r inkn` sentre inkludert i analysen fordi `r missn` sentre har ingen data. [Her kan det ligger mer tekst om det er ønkelig]
+
+```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center', fig.height=4}
+
+gg.fig1 <- ggplot(fig01Data, aes(reorder(Navn, N), N)) +
+  geom_bar(stat = "identity", fill = colb) +
+  coord_flip() +
+  labs(title = paste0("Antall inkluderte per senter (N = ", NN, ")"),
+       y = "", x = "") +
+  scale_y_continuous(expand = c(0, 0)) +
+  theme(
+    plot.margin = unit(c(0,2,0.5,0.5), "cm"),
+    axis.text.y = element_text(size = 9, color = "black"),
+    axis.ticks.y = element_blank(),
+    axis.line.x = element_line(size = 0.5),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    ##panel.grid.major.x = element_line(colour = "grey", size = 0.4, linetype = 2),
+    panel.grid.major.x = element_blank(),
+    axis.title.y = element_text(size = 9),
+    axis.title.x = element_text(size = 9))
 
 gg.fig01T <- ggplot_gtable(ggplot_build(gg.fig1))
 gg.fig01T$layout$clip[gg.fig01T$layout$name == "panel"] <- "off"
 grid.draw(gg.fig01T)
-
 ```
 
 
