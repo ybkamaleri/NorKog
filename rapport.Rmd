@@ -2,12 +2,17 @@
 ```{r file, echo=FALSE, warnings=FALSE, include=FALSE, message=FALSE}
 rm(list = ls())
 
+## Default repo
+local({r <- getOption("repos")
+  r["CRAN"] <- "http://cran.r-project.org" 
+  options(repos=r)
+})
+
 ## henter pakker eller installere om ikke finnes
 inspak <- function(pkg){
   nypkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(nypkg))
     install.packages(nypkg, dependencies = TRUE)
-
 }
 
 pakke <- c("data.table", "dplyr", "ggplot2", "tidyr", "grid", "knitr")
