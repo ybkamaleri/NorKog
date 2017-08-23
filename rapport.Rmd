@@ -79,17 +79,23 @@ inkn <- sn - missn #antall senter uten missing data
 
 ```
 
-Det er bare `r inkn` sentre inkludert i analysen fordi `r missn` sentre har ingen data. [Her kan det ligger mer tekst om det er ønkelig]
+Det er bare `r inkn` sentre inkludert i analysen fordi `r missn` sentre har ingen data. [Her kan det ligge mer tekst om det er ønkelig]
 
-```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center', fig.height=4}
+```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 
-gg.fig1 <- ggplot(fig01Data, aes(reorder(Navn, N), N)) +
+innText <- fig01Data[, pos := ifelse(N < 200, 0, 1)][, pos := ifelse(N == 0, 3, pos)]
+title <- paste0("Antall inkluderte per senter (N = ", NN, ")")
+
+gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
   geom_bar(stat = "identity", fill = colb) +
+  geom_text(data = innText[pos == 1], aes(x = Navn, y = N - 50, label = N), size = 2.5) +
+  geom_text(data = innText[pos == 0], aes(x = Navn, y = N + 35, label = N), size = 2.5) +
+  geom_text(data = innText[pos == 3], aes(x = Navn, y = 10, label = paste0("-"))) + 
   coord_flip() +
-  labs(title = paste0("Antall inkluderte per senter (N = ", NN, ")"),
-       y = "", x = "") +
+  labs(title = title, y = "", x = "") +
   scale_y_continuous(expand = c(0, 0)) +
   theme(
+    plot.title = element_text(size = 10, color = "black"), 
     plot.margin = unit(c(0,2,0.5,0.5), "cm"),
     axis.text.y = element_text(size = 9, color = "black"),
     axis.ticks.y = element_blank(),
@@ -105,6 +111,13 @@ gg.fig01T <- ggplot_gtable(ggplot_build(gg.fig1))
 gg.fig01T$layout$clip[gg.fig01T$layout$name == "panel"] <- "off"
 grid.draw(gg.fig01T)
 ```
+
+# Antall inkluderte per senter per år
+
+```{r fig02, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+
+```
+
 
 
 
