@@ -43,7 +43,7 @@ ColPoint <- "#FF3333" #farge for point
 cols <- c("#99CCFF", "#0066CC", "#003366") #farge for flere bar
 colb <- "#99CCFF" #farge for en søyle
 options(digits = 3)
-
+setkey(RegData, SENTER)
 
 ```
 
@@ -59,19 +59,17 @@ date: `r format(Sys.Date(), "%d %b %Y")`
 ## Lister av navn for sentrene
 sentfil <- paste0(filDir, "/doc/senter.csv")
 senter <- data.table::fread(sentfil, header = TRUE, encoding = "Latin-1")
+setkey(senter, Senter) #key er senter kode
+
+## Slå sammen senternavn og dataset
+Data <- merge(RegData, senter, by.x = "SENTER", by.y = "Senter", all.x = TRUE)
+fig01Data <- Data[, .N, by = Navn]
+
 
 sn <- dim(senter)[1] #antall sentre
-sentdata <- RegData[, .N, by = SENTER]
 NN <- dim(RegData)[1] #antall pasienter i datasettet
 
-## gi felles variable navn til senterkode før sammenslåing
-setnames(sentdata, 1, "v1")
-setnames(senter, 1, "v1")
-setkey(sentdata, v1)
-setkey(senter, v1)
-
 ## Merge
-fig01Data <- merge(senter, sentdata, all.x = TRUE)
 missn <- fig01Data[is.na(N), .N] #antall senter med misssing data
 fig01Data <- fig01Data[is.na(N), N := 0]
 
@@ -79,18 +77,17 @@ inkn <- sn - missn #antall senter uten missing data
 
 ```
 
-Det er bare `r inkn` sentre inkludert i analysen fordi `r missn` sentre har ingen data. [Her kan det ligge mer tekst om det er ønkelig]
+Det er `r inkn` sentre inkludert i analysen. [Her kan det ligge mer tekst om det er ønkelig]
 
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 
-innText <- fig01Data[, pos := ifelse(N < 200, 0, 1)][, pos := ifelse(N == 0, 3, pos)]
+innText <- fig01Data[, pos := ifelse(N < 200, 0, 1)]
 title <- paste0("Antall inkluderte per senter (N = ", NN, ")")
 
 gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
   geom_bar(stat = "identity", fill = colb) +
   geom_text(data = innText[pos == 1], aes(x = Navn, y = N - 50, label = N), size = 2.5) +
   geom_text(data = innText[pos == 0], aes(x = Navn, y = N + 35, label = N), size = 2.5) +
-  geom_text(data = innText[pos == 3], aes(x = Navn, y = 10, label = paste0("-"))) + 
   coord_flip() +
   labs(title = title, y = "", x = "") +
   scale_y_continuous(expand = c(0, 0)) +
@@ -115,6 +112,9 @@ grid.draw(gg.fig01T)
 # Antall inkluderte per senter per år
 
 ```{r fig02, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+
+Data[, yr := as.integer(format(as.IDate(DATO_US, format = "%m/%d/%Y"), "%Y"))]
+
 
 ```
 
