@@ -12,19 +12,17 @@ local({r <- getOption("repos")
 inspak <- function(pkg){
   nypkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(nypkg))
-    install.packages(nypkg, dependencies = TRUE)
+    install.packages(nypkg, dependencies = TRUE, repos = "http://cran.r-project.org")
 }
 
-pakke <- c("data.table", "dplyr", "ggplot2", "tidyr", "grid", "knitr")
+pakke <- c("data.table", "ggplot2", "grid", "knitr")
 inspak(pakke)
 
 ## Upload libraries
 library(data.table)
-library(dplyr)
 library(ggplot2)
 library(knitr)
 library(grid)
-library(tidyr)
 
 
 ############
@@ -51,7 +49,7 @@ options(digits = 3)
 
 ---
 title: Rapport for NorKog
-date: `r format(Sys.Date(), "%d %b. %Y")`
+date: `r format(Sys.Date(), "%d %b %Y")`
 ---
 
 # Antall inkluderte per senter
@@ -99,7 +97,6 @@ gg.fig1 <- ggplot(fig01Data, aes(reorder(Navn, N), N)) +
     panel.background = element_blank(),
     panel.border = element_blank(),
     panel.grid.minor.y = element_blank(),
-    ##panel.grid.major.x = element_line(colour = "grey", size = 0.4, linetype = 2),
     panel.grid.major.x = element_blank(),
     axis.title.y = element_text(size = 9),
     axis.title.x = element_text(size = 9))
