@@ -130,13 +130,13 @@ dateNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
 
 ## Dataset uten NA i DATO_US
 Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
-yrmix <- 2008:2012 #slå sammen disse år tallene
-yrtab <- "2008-2012" #tekst til tabell
+yrmix <- 2008:2010 #slå sammen disse år tallene
+yrtab <- "2008-2010" #tekst til tabell
 Datayr[, yr2 := ifelse(yr %in% yrmix, 2000, yr)] #yr2000 = 2008:2012
 
 ```
 
-Det er `r dateNA` sentre mangle **DATO_US**. Derfor antallet er ikke lik som i forrige figur
+Det er `r dateNA` missing data i **DATO_US**. Derfor antallet er ikke lik som i forrige figur
 
 ```{r tab01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 
