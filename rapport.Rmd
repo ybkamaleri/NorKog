@@ -74,20 +74,21 @@ missn <- fig01Data[is.na(N), .N] #antall senter med misssing data
 fig01Data <- fig01Data[is.na(N), N := 0]
 
 inkn <- sn - missn #antall senter uten missing data
+inkl <- Data[, length(unique(Navn))]
 
 ```
 
-Det er `r inkn` sentre inkludert i analysen. [Her kan det ligge mer tekst om det er ønkelig]
+Det er `r inkl` sentre inkludert i analysen. [Her kan det ligge mer tekst om det er ønkelig]
 
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 
-innText <- fig01Data[, pos := ifelse(N < 200, 0, 1)]
+innText <- fig01Data[, pos := ifelse(N < 100, 0, 1)]
 title <- paste0("Antall inkluderte per senter (N = ", NN, ")")
 
 gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
   geom_bar(stat = "identity", fill = colb) +
   geom_text(data = innText[pos == 1], aes(x = Navn, y = N - 50, label = N), size = 2.5) +
-  geom_text(data = innText[pos == 0], aes(x = Navn, y = N + 35, label = N), size = 2.5) +
+  geom_text(data = innText[pos == 0], aes(x = Navn, y = N + 25, label = N), size = 2.5) +
   coord_flip() +
   labs(title = title, y = "", x = "") +
   scale_y_continuous(expand = c(0, 0)) +
@@ -114,7 +115,16 @@ grid.draw(gg.fig01T)
 ```{r fig02, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 
 Data[, yr := as.integer(format(as.IDate(DATO_US, format = "%m/%d/%Y"), "%Y"))]
+yrmix <- 2008:2010 #slå sammen disse år tallene
+Data[, yr2 := ifelse(yr %in% yrmix, 2888, yr)]
+## Antall per senter per år
+senNyr <- Data[, .N, by = .(Navn, yr2)]
+names(senNyr)[names(senNyr) == "N"] <- "n"
 
+## Antall per senter
+senN <- Data[, .N, by = .(Navn)]
+
+fig02Data <- merge(senNyr, senN, by = "Navn", all.x = TRUE)
 
 ```
 
