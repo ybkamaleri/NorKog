@@ -45,6 +45,17 @@ colb <- "#99CCFF" #farge for en søyle
 options(digits = 3)
 setkey(RegData, SENTER)
 
+###########
+## Function
+###########
+
+## bytt NA med 0
+bNA <- function(DT){
+  for (j in seq_len(ncol(DT)))
+    set(DT,which(is.na(DT[[j]])),j,0) 
+}
+
+
 ```
 
 ---
@@ -112,21 +123,55 @@ grid.draw(gg.fig01T)
 
 # Antall inkluderte per senter per år
 
-```{r fig02, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+```{r tab01data, echo=FALSE, message=FALSE, warning=FALSE}
+Data <- Data[, date_yr := as.IDate(DATO_US, format = "%m/%d/%Y")] #konvertere DATO_US til date.format
+Data[, yr := as.integer(format(date_yr, "%Y"))]
+dateNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
 
-Data[, yr := as.integer(format(as.IDate(DATO_US, format = "%m/%d/%Y"), "%Y"))]
-yrmix <- 2008:2010 #slå sammen disse år tallene
-Data[, yr2 := ifelse(yr %in% yrmix, 2888, yr)]
-## Antall per senter per år
-senNyr <- Data[, .N, by = .(Navn, yr2)]
-names(senNyr)[names(senNyr) == "N"] <- "n"
-
-## Antall per senter
-senN <- Data[, .N, by = .(Navn)]
-
-fig02Data <- merge(senNyr, senN, by = "Navn", all.x = TRUE)
+## Dataset uten NA i DATO_US
+Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
+yrmix <- 2008:2012 #slå sammen disse år tallene
+yrtab <- "2008-2012" #tekst til tabell
+Datayr[, yr2 := ifelse(yr %in% yrmix, 2000, yr)] #yr2000 = 2008:2012
 
 ```
+
+Det er `r dateNA` sentre mangle **DATO_US**. Derfor antallet er ikke lik som i forrige figur
+
+```{r tab01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+
+## Antall per senter per år
+senNyrNA <- Datayr[, .N, by = .(Navn, yr2)]
+names(senNyrNA)[names(senNyrNA) == "N"] <- "n"
+senNyr1 <- dcast(senNyrNA, Navn ~ yr2, value.var = "n")
+
+bNA(senNyr1) #bytt all NA til 0
+
+## Antall per senter
+senN <- Datayr[, .N, by = .(Navn)]
+names(senN)[names(senN) == "N"] <- "Total"
+
+## Kobinere antall per senter og total
+tab02 <- merge(senNyr1, senN, by="Navn")
+
+## Antall per år
+yearN <- Datayr[, .N, by = .(yr2)]
+yearN$Navn <- "Total"
+yearN1 <- dcast(yearN, Navn ~ yr2, value.var = "N")
+yearN1$Total <- dim(Datayr)[1]
+
+## Tabell
+tab02all <- rbind(tab02, yearN1)
+names(tab02all)[names(tab02all) == 2000] <- yrtab
+
+## print tabell
+knitr::kable(tab02all)
+```
+
+
+
+
+
 
 
 
