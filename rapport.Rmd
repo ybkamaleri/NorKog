@@ -124,8 +124,8 @@ grid.draw(gg.fig01T)
 # Antall inkluderte per senter per år
 
 ```{r tab01data, echo=FALSE, message=FALSE, warning=FALSE}
-Data <- Data[, date_yr := as.IDate(DATO_US, format = "%m/%d/%Y")] #konvertere DATO_US til date.format
-Data[, yr := as.integer(format(date_yr, "%Y"))]
+Data <- Data[, date_us := as.IDate(DATO_US, format = "%m/%d/%Y")] #konvertere DATO_US til date.format
+Data[, yr := as.integer(format(date_us, "%Y"))]
 dateNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
 
 ## Dataset uten NA i DATO_US
@@ -162,13 +162,63 @@ yearN1$Total <- dim(Datayr)[1]
 
 ## Tabell
 tab02all <- rbind(tab02, yearN1)
-names(tab02all)[names(tab02all) == 2000] <- yrtab
+names(tab02all)[names(tab02all) == 2000] <- yrtab #gi col navn
+names(tab02all)[names(tab02all) == "Navn"] <- "Senter" #col navn Senter
 
 ## print tabell
 knitr::kable(tab02all)
 ```
 
+# Demografiske variabler, gjennomsnitt per senter
 
+Kodebok for **Kjønn** og **Sivil status** mangler
+
+```{r tab02data, echo=FALSE, message=FALSE, warning=FALSE}
+
+## eksludert senter med mindre enn 20
+valgSenter <- senN$Navn[senN$Total > 20] #vector Senter navn med deltaker >20
+
+DataT02 <- Data[Navn %in% valgSenter, ]
+setkey(DataT02, Navn)
+
+## Alder beregn fra år hentes fra DATO_US
+DataT02[, alder := yr - FØDSELSÅ] #OBS! kan lage problem med norske bokstave
+DataT02[, alder := ifelse(is.na(alder), ALDER_PAS, alder)]
+ageT02 <- DataT02[, mean(alder, na.rm = TRUE), by = Navn]
+names(ageT02)[names(ageT02) == "V1"] <- "Alder"
+
+## Kjønn - kodeboke for menn og kvinner
+
+## Sivil status -- kodeboke
+
+## Utdannelse
+DataT02[, skole := as.numeric(ÅR_SKOLE)]
+skoT02 <- DataT02[, mean(skole, na.rm = TRUE), by = Navn]
+names(skoT02)[names(skoT02) == "V1"] <- "Utdannelse"
+
+## Offentlig hjelp
+## Skal NA tatt bort eller bregn som nevner???
+##proOffTab <- DataT02[order(OFF_HJEL), list(unique(OFF_HJEL), proHjel = tabulate(OFF_HJEL) / .N + 100), by = Navn]
+v04 <- "OFF_HJEL"
+offT02Tab <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v04)) / .N * 100), by = Navn]
+offT02 <- offT02Tab[V1 == 1] #NA inkludert som nevner
+offT02$V1 <- NULL
+names(offT02)[names(offT02) == "V2"] <- "Offentlig"
+
+## Komparent
+v05 <- "KOMPAREN"
+komT02Tab <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100), by = Navn]
+komT02 <- komT02Tab[V1 == 1]
+komT02$V1 <- NULL
+names(komT02)[names(komT02) == "V2"] <- "Komparent"
+
+listTab <- list(ageT02, skoT02, offT02, komT02)
+tab03 <- Reduce(function(x, y) x[y], listTab)
+
+knitr::kable(tab03)
+
+
+```
 
 
 
