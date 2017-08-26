@@ -181,20 +181,30 @@ valgSenter <- senN$Navn[senN$Total > 20] #vector Senter navn med deltaker >20
 DataT02 <- Data[Navn %in% valgSenter, ]
 setkey(DataT02, Navn)
 
+#OBS! kan lage problem med norske bokstave
+
 ## Alder beregn fra år hentes fra DATO_US
-DataT02[, alder := yr - FØDSELSÅ] #OBS! kan lage problem med norske bokstave
+## rename FØDSELSÅ to "byear" 
+vb01 <- grepl("DSELS", colnames(DataT02), fixed = TRUE)
+colnames(DataT02)[vb01] <- "byear"
+DataT02[, alder := yr - byear] 
 DataT02[, alder := ifelse(is.na(alder), ALDER_PAS, alder)]
 ageT02 <- DataT02[, mean(alder, na.rm = TRUE), by = Navn]
 names(ageT02)[names(ageT02) == "V1"] <- "Alder"
+ageTot <- DataT02[, mean(alder, na.rm = TRUE)] #total mean alder
 
 ## Kjønn - kodeboke for menn og kvinner
 
 ## Sivil status -- kodeboke
 
 ## Utdannelse
-DataT02[, skole := as.numeric(ÅR_SKOLE)]
+## Bytt ÅR_SKOLE til "skoleyr"
+vb02 <- grepl("_SKOLE", colnames(DataT02), fixed = TRUE)
+colnames(DataT02)[vb02] <- "skoleyr"
+DataT02[, skole := as.numeric(skoleyr)]
 skoT02 <- DataT02[, mean(skole, na.rm = TRUE), by = Navn]
 names(skoT02)[names(skoT02) == "V1"] <- "Utdannelse"
+skoTot <- DataT02[, mean(skole, na.rm = TRUE)] #total utdannelse år
 
 ## Offentlig hjelp
 ## Skal NA tatt bort eller bregn som nevner???
@@ -204,6 +214,9 @@ offT02Tab <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v
 offT02 <- offT02Tab[V1 == 1] #NA inkludert som nevner
 offT02$V1 <- NULL
 names(offT02)[names(offT02) == "V2"] <- "Offentlig"
+## total offentlig hjelp
+offTotValue <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v04)) / .N * 100)]
+offTot <- offTotValue$V2[offTotValue$V1 == 1][1]
 
 ## Komparent
 v05 <- "KOMPAREN"
@@ -211,6 +224,11 @@ komT02Tab <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v
 komT02 <- komT02Tab[V1 == 1]
 komT02$V1 <- NULL
 names(komT02)[names(komT02) == "V2"] <- "Komparent"
+## total komparent
+komTotValue <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100)]
+komTot <- komTotValue$V2[komTotValue$V1 == 1][1]
+
+##allTot <- data.frame("Total", ageTot, skoTot, offTot, komTot)
 
 listTab <- list(ageT02, skoT02, offT02, komT02)
 tab03 <- Reduce(function(x, y) x[y], listTab)
