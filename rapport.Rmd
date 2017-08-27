@@ -302,7 +302,7 @@ colnames(tab03miss) <- colMiss
 
 ## Naming table
 colAll <- c("Senter", "År, mean", "År, mean", "Ja, %", "Ja, %")
-colnames(tab03allmiss) <- colAll
+colnames(tab03all) <- colAll
 
 ## siste linje til bold
 lastLine <- dim(tab03all)[1]
