@@ -15,7 +15,7 @@ inspak <- function(pkg){
     install.packages(nypkg, dependencies = TRUE, repos = "http://cran.r-project.org")
 }
 
-pakke <- c("data.table", "ggplot2", "grid", "knitr")
+pakke <- c("data.table", "ggplot2", "grid", "knitr", "kableExtra")
 inspak(pakke)
 
 ## Upload libraries
@@ -23,7 +23,7 @@ library(data.table)
 library(ggplot2)
 library(knitr)
 library(grid)
-
+library(kableExtra)
 
 ############
 ## DATA
@@ -166,12 +166,16 @@ names(tab02all)[names(tab02all) == 2000] <- yrtab #gi col navn
 names(tab02all)[names(tab02all) == "Navn"] <- "Senter" #col navn Senter
 
 ## print tabell
+## kable(tab02all, format = "latex", booktabs = TRUE) %>%
+##   kable_styling()
+  
 knitr::kable(tab02all)
+
 ```
 
 # Demografiske variabler, gjennomsnitt per senter
 
-Kodebok for **Kjønn** og **Sivil status** mangler
+Mangler [kodebok] for **Kjønn** og **Sivil status** i dokumentet 
 
 ```{r tab02data, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -191,7 +195,7 @@ DataT02[, alder := yr - byear]
 DataT02[, alder := ifelse(is.na(alder), ALDER_PAS, alder)]
 ageT02 <- DataT02[, mean(alder, na.rm = TRUE), by = Navn]
 names(ageT02)[names(ageT02) == "V1"] <- "Alder"
-ageTot <- DataT02[, mean(alder, na.rm = TRUE)] #total mean alder
+## ageTot <- DataT02[, mean(alder, na.rm = TRUE)] #total mean alder
 
 ## Kjønn - kodeboke for menn og kvinner
 
@@ -204,36 +208,114 @@ colnames(DataT02)[vb02] <- "skoleyr"
 DataT02[, skole := as.numeric(skoleyr)]
 skoT02 <- DataT02[, mean(skole, na.rm = TRUE), by = Navn]
 names(skoT02)[names(skoT02) == "V1"] <- "Utdannelse"
-skoTot <- DataT02[, mean(skole, na.rm = TRUE)] #total utdannelse år
+## skoTot <- DataT02[, mean(skole, na.rm = TRUE)] #total utdannelse år
 
-## Offentlig hjelp
+## Offentlig hjelp NA remove
 ## Skal NA tatt bort eller bregn som nevner???
 ##proOffTab <- DataT02[order(OFF_HJEL), list(unique(OFF_HJEL), proHjel = tabulate(OFF_HJEL) / .N + 100), by = Navn]
 v04 <- "OFF_HJEL"
-offT02Tab <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v04)) / .N * 100), by = Navn]
-offT02 <- offT02Tab[V1 == 1] #NA inkludert som nevner
-offT02$V1 <- NULL
-names(offT02)[names(offT02) == "V2"] <- "Offentlig"
-## total offentlig hjelp
-offTotValue <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v04)) / .N * 100)]
-offTot <- offTotValue$V2[offTotValue$V1 == 1][1]
+v04na <- DataT02[!is.na(get(v04)), .N, by = Navn]
+v04ja <- DataT02[get(v04) == 1, .N, by = Navn]
+colnames(v04ja) <- c("Navn", "n")
+setkey(v04na, Navn)
+setkey(v04ja, Navn)
+offT02Tab <- v04na[v04ja]
+offT02Tab[, off := n / N * 100, by = Navn]
+offT02 <- offT02Tab[, c(1, 4)]
 
-## Komparent
+## offT02Tab <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v04)) / .N * 100), by = Navn]
+## offT02 <- offT02Tab[V1 == 1] #NA inkludert som nevner
+## offT02$V1 <- NULL
+## names(offT02)[names(offT02) == "V2"] <- "Offentlig"
+## ## total offentlig hjelp
+## offTotValue <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v04)) / .N * 100)]
+## offTot <- offTotValue$V2[offTotValue$V1 == 1][1]
+
+## Komparent NA remove
 v05 <- "KOMPAREN"
-komT02Tab <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100), by = Navn]
-komT02 <- komT02Tab[V1 == 1]
-komT02$V1 <- NULL
-names(komT02)[names(komT02) == "V2"] <- "Komparent"
-## total komparent
-komTotValue <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100)]
-komTot <- komTotValue$V2[komTotValue$V1 == 1][1]
+v05na <- DataT02[!is.na(get(v05)), .N, by = Navn]
+v05ja <- DataT02[get(v05) == 1, .N, by = Navn]
+colnames(v05ja) <- c("Navn", "n")
+setkey(v05na, Navn)
+setkey(v05ja, Navn)
+komT02Tab <- v05na[v05ja]
+komT02Tab[, kom := n / N * 100, by = Navn]
+komT02 <- komT02Tab[, c(1, 4)]
 
-##allTot <- data.frame("Total", ageTot, skoTot, offTot, komTot)
+
+## komT02Tab <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100), by = Navn]
+## komT02 <- komT02Tab[V1 == 1]
+## komT02$V1 <- NULL
+## names(komT02)[names(komT02) == "V2"] <- "Komparent"
+## ## total komparent
+## komTotValue <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100)]
+## komTot <- komTotValue$V2[komTotValue$V1 == 1][1]
+
+
+### TOTAL
+## Mean alder og utdannelse Total
+Tot01 <-  DataT02[, lapply(.SD, function(x) mean(x, na.rm = T)), .SDcol = c("alder", "skole")]
+
+## Andel svarte Ja OFF_HJEL eksludert NA
+offNA <- DataT02[!is.na(get(v04)), .N] #OFF_HJEL uten NA
+totOff <- DataT02[, lapply(.SD, function(x) tabulate(x) / offNA * 100), .SDcol = c(v04)] #uten NA OFF_HJEL
+## Andel svarte Ja KOMPAREN eksludert NA
+komNA <- DataT02[!is.na(get(v05)), .N] #KOMPAREN uten NA
+totKom <- DataT02[, lapply(.SD, function(x) tabulate(x) / komNA * 100), .SDcol = c(v05)] #uten NA OFF_HJEL
+Tot02 <- cbind(totOff, totKom)
+
+## Andel svarte Ja OFF_HJEL og KOMPAREN
+Tot02na <- DataT02[, lapply(.SD, function(x) tabulate(x) / .N * 100), .SDcol = c(v04, v05) ] #inkludert NA
+
+
+colTot <- c("age", "edu", "off", "kom")
+tab03tot <- cbind(Tot01, Tot02) #NA eksludert i Totallen
+colnames(tab03tot) <- colTot
+tab03tot$Senter <- "Total"
+
+## colTot <- colnames(tab03)
+## varN <- list(ageTot, skoTot, offTot, komTot)
+## valTot <- c("Total", ageTot, skoTot, offTot, komTot)
+## tabTot <- data.table(colTot, valTot)
+
+col3 <- c("Senter", "age", "edu", "off", "kom")
 
 listTab <- list(ageT02, skoT02, offT02, komT02)
 tab03 <- Reduce(function(x, y) x[y], listTab)
 
-knitr::kable(tab03)
+## Endre col navn
+colnames(tab03) <- col3
+
+### Missing
+missTab <- DataT02[, lapply(.SD, function(x) sum(is.na(x))), .SDcols = c("alder", "skole", v04, v05)]
+colnames(missTab) <- colTot
+missTab$Senter <- "Missing"
+
+## Kombinere tabell med colnames data.table::rbindlist
+tab03all <- rbindlist(list(tab03, tab03tot), fill = TRUE)
+## Kombinere tabell missing
+tab03allmiss <- rbindlist(list(tab03all, missTab), fill = TRUE)
+lineMiss <- dim(tab03allmiss)[1]
+tab03miss <- tab03allmiss[lineMiss, ]
+colMiss <- c("Data", "Alder", "Utdannelse", "Oftenlig Hjelp", "Komparen")
+colnames(tab03miss) <- colMiss
+
+## Naming table
+colAll <- c("Senter", "År, mean", "År, mean", "Ja, %", "Ja, %")
+colnames(tab03allmiss) <- colAll
+
+## siste linje til bold
+lastLine <- dim(tab03all)[1]
+
+kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
+  kable_styling() %>%
+  row_spec(lastLine, bold = TRUE) %>%
+  add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
+                     "Komparen" = 1))
+
+kable(tab03miss, booktabs = TRUE) 
+
+## knitr::kable(tab03all) 
 
 
 ```
@@ -242,5 +324,14 @@ knitr::kable(tab03)
 
 
 
+```{r test, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+library(microbenchmark)
+
+microbenchmark(
+  a <- DataT02[!is.na(get(v05)), .N],
+  b <- dim(na.omit(DataT02, col = c(v05)))[1]
+)
+
+```
 
 
