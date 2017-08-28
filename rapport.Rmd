@@ -1,3 +1,12 @@
+---
+title: "Rapport for NorKog"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: '`r format(Sys.Date(), "%d %b %Y")`'
+---
+
 ```{r dataValg, echo=FALSE}
 rm(list = ls())
 
@@ -54,8 +63,20 @@ source(data)
 ## Output doc
 ##############
 
-outDoc <- knitr::opts_knit$git("rmarkdown.pandoc.to") #doc type output html,latex eller docx
+## outDoc <- knitr::opts_knit$git("rmarkdown.pandoc.to") #doc type output html,latex eller docx
 
+getOutputFormat <- function() {
+  output <- rmarkdown:::parse_yaml_front_matter(
+    readLines(knitr::current_input())
+  )$output
+  if (is.list(output)){
+    return(names(output)[1])
+  } else {
+    return(output[1])
+  }
+}
+
+printDoc <- getOutputFormat() #finne ut document type output
 
 ###########
 ## FARGER
@@ -79,10 +100,6 @@ bNA <- function(DT){
 
 ```
 
----
-title: Rapport for NorKog
-date: `r format(Sys.Date(), "%d %b %Y")`
----
 
 # Antall inkluderte per senter
 
@@ -327,11 +344,12 @@ colnames(tab03miss) <- colMiss
 colAll <- c("Senter", "År, mean", "År, mean", "Ja, %", "Ja, %")
 colnames(tab03all) <- colAll
 
-## siste linje til bold
+## siste linje til bold i pdf output
 lastLine <- dim(tab03all)[1]
 
-switch(outDoc,
-       latex = {
+
+switch(printDoc,
+       "pdf_document" = {
 
          kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
            kable_styling() %>%
@@ -339,12 +357,8 @@ switch(outDoc,
            add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
                               "Komparent" = 1))
        },
-       html = {knitr::kable(tab03all)},
-       docx = {knitr::kable(tab03all)}
-       )
-
-
- 
+       "word_document" = {kable(tab03all)},
+       "html_document" = {kable(tab03all)})
 
 ## knitr::kable(tab03all) 
 
