@@ -2,11 +2,11 @@
 ```{r file, echo=FALSE, warnings=FALSE, include=FALSE, message=FALSE}
 rm(list = ls())
 
-## Default repo
-local({r <- getOption("repos")
-  r["CRAN"] <- "http://cran.r-project.org" 
-  options(repos=r)
-})
+## ## Default repo
+## local({r <- getOption("repos")
+##   r["CRAN"] <- "http://cran.r-project.org" 
+##   options(repos=r)
+## })
 
 ## henter pakker eller installere om ikke finnes
 inspak <- function(pkg){
@@ -330,13 +330,14 @@ kable(tab03miss, booktabs = TRUE)
 
 
 ```{r test, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}    
-library(microbenchmark)
-
-microbenchmark(
-  a <- DataT02[!is.na(get(v05)), .N],
-  b <- dim(na.omit(DataT02, col = c(v05)))[1]
-)
 
 ```
+
+
+
+
+
+
+
 
 

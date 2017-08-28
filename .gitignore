@@ -1,3 +1,4 @@
 /datakilder1.R
 *.pdf
 *.Rmd#
+/benchmark.R
