@@ -1,6 +1,21 @@
+```{r dataValg, echo=FALSE}
+rm(list = ls())
+
+########################
+## Valgfrie variabler ##
+########################
+
+## Hvilket år skal kombineres? - endres etter behov
+yearMix <- 2008:2010
+
+
+
+
+
+```
+
 
 ```{r file, echo=FALSE, warnings=FALSE, include=FALSE, message=FALSE}
-rm(list = ls())
 
 ## ## Default repo
 ## local({r <- getOption("repos")
@@ -34,6 +49,12 @@ sr02 <- paste0(filDir, "/", "datakilder2.R")
 ##ifelse(file.exists(sr01), source(sr01), source(sr02))
 data <- ifelse(file.exists(sr01), sr01, sr02)
 source(data)
+
+##############
+## Output doc
+##############
+
+outDoc <- knitr::opts_knit$git("rmarkdown.pandoc.to") #doc type output html,latex eller docx
 
 
 ###########
@@ -125,14 +146,16 @@ grid.draw(gg.fig01T)
 
 ```{r tab01data, echo=FALSE, message=FALSE, warning=FALSE}
 Data <- Data[, date_us := as.IDate(DATO_US, format = "%m/%d/%Y")] #konvertere DATO_US til date.format
-Data[, yr := as.integer(format(date_us, "%Y"))]
+Data[, yr := as.integer(format(date_us, "%Y"))] #lage kolone "yr" for år fra DATO_US
 dateNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
+
+## Slå sammen år til en kolone
+yrmix <- yearMix #slå sammen disse år tallene
+yrtab <- paste0(min(yearMix),"-", max(yearMix)) #tekst til tabell
+Data[, yr2 := ifelse(yr %in% yrmix, 2000, yr)] #dummy for 2008:2012 er 2000
 
 ## Dataset uten NA i DATO_US
 Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
-yrmix <- 2008:2010 #slå sammen disse år tallene
-yrtab <- "2008-2010" #tekst til tabell
-Datayr[, yr2 := ifelse(yr %in% yrmix, 2000, yr)] #yr2000 = 2008:2012
 
 ```
 
@@ -297,7 +320,7 @@ tab03all <- rbindlist(list(tab03, tab03tot), fill = TRUE)
 tab03allmiss <- rbindlist(list(tab03all, missTab), fill = TRUE)
 lineMiss <- dim(tab03allmiss)[1]
 tab03miss <- tab03allmiss[lineMiss, ]
-colMiss <- c("Data", "Alder", "Utdannelse", "Oftenlig Hjelp", "Komparen")
+colMiss <- c("Data", "Alder", "Utdannelse", "Oftenlig Hjelp", "Komparent")
 colnames(tab03miss) <- colMiss
 
 ## Naming table
@@ -307,11 +330,19 @@ colnames(tab03all) <- colAll
 ## siste linje til bold
 lastLine <- dim(tab03all)[1]
 
-kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
-  kable_styling() %>%
-  row_spec(lastLine, bold = TRUE) %>%
-  add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
-                     "Komparen" = 1))
+switch(outDoc,
+       latex = {
+
+         kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
+           kable_styling() %>%
+           row_spec(lastLine, bold = TRUE) %>%
+           add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
+                              "Komparent" = 1))
+       },
+       html = {knitr::kable(tab03all)},
+       docx = {knitr::kable(tab03all)}
+       )
+
 
  
 
