@@ -2,3 +2,5 @@
 *.pdf
 *.Rmd#
 /benchmark.R
+/*.docx
+*.md

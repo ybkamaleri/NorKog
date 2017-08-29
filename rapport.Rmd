@@ -59,6 +59,12 @@ sr02 <- paste0(filDir, "/", "datakilder2.R")
 data <- ifelse(file.exists(sr01), sr01, sr02)
 source(data)
 
+#############
+## Knitr opt
+#############
+
+knitr::opts_chunk$set(fig.path = 'figures/nkog-') #mappe for figurer
+
 ##############
 ## Output doc
 ##############
