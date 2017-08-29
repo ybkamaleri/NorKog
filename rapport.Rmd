@@ -98,9 +98,9 @@ setkey(RegData, SENTER)
 ###########
 
 ## bytt NA med 0
-bNA <- function(DT){
+bNA <- function(DT, na = 0){
   for (j in seq_len(ncol(DT)))
-    set(DT,which(is.na(DT[[j]])),j,0) 
+    set(DT,which(is.na(DT[[j]])),j, na) 
 }
 
 
@@ -172,7 +172,9 @@ Data <- Data[, date_us := as.IDate(DATO_US, format = "%m/%d/%Y")] #konvertere DA
 Data[, yr := as.integer(format(date_us, "%Y"))] #lage kolone "yr" for år fra DATO_US
 dateNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
 
+###############################
 ## Slå sammen år til en kolone
+###############################
 yrmix <- yearMix #slå sammen disse år tallene
 yrtab <- paste0(min(yearMix),"-", max(yearMix)) #tekst til tabell
 Data[, yr2 := ifelse(yr %in% yrmix, 2000, yr)] #dummy for 2008:2012 er 2000
@@ -191,7 +193,7 @@ senNyrNA <- Datayr[, .N, by = .(Navn, yr2)]
 names(senNyrNA)[names(senNyrNA) == "N"] <- "n"
 senNyr1 <- dcast(senNyrNA, Navn ~ yr2, value.var = "n")
 
-bNA(senNyr1) #bytt all NA til 0
+bNA(DT = senNyr1, na = 0) #bytt all NA til 0
 
 ## Antall per senter
 senN <- Datayr[, .N, by = .(Navn)]
@@ -377,12 +379,24 @@ kable(tab03miss, booktabs = TRUE)
 
 ```
 
+# Motakker av offentlig hjelp
+
+Andel av motakker av offentlig hjelp 
 
 
+```{r fig02, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}    
 
-```{r test, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}    
+## Dataset med senter mer enn 20 (>20)
+offPro <- DataT02[, .N, by = .(yr2, get(v04))]
+bNA(offPro, 99)
 
-```
+offPro <- offPro[yr2 != 99]
+setkey(offPro, yr2)
+offPro[, sum := sum(N), by = yr2]
+offPro[, pros := N / sum * 100, by = .(yr2, get)]
+
+
+```                                           
 
 
 
