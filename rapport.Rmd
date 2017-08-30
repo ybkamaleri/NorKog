@@ -402,7 +402,7 @@ offPro[, pros := N / sum * 100, by = .(yr, get)][]
 Andel motakker av offentlig hjelp. [*Jeg synes å presentere dataene som linje diagram belyser tydeligere tidstrend i dataene. Det er vanskeligere å se trend for de forskjellige kategoriene i stack diagram som foreslått*]
 
 
-```{r fig02, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+```{r fig02, echo=FALSE, warning=FALSE, message=FALSE, fig.height=3.5, fig.width=6,fig.align='center'}
 ##labelling
 fig_lab <- c("Nei", "Ja", "Missing")
 offPro$get <- factor(offPro$get, levels = c(0,1,99),labels = fig_lab )
@@ -417,7 +417,7 @@ gg.fig02 <- ggplot(offPro, aes(as.factor(yr), pros, group = get, color = as.fact
   scale_x_discrete(expand=c(0, 1.5)) +
   geom_text(aes(label = format(pros, digits = 1)), vjust = -1.2, color = "grey40", size = 3) +
   ## dl.trans for å posisjonere hvor teksten skal vises
-  directlabels::geom_dl(aes(label = get), method = list(dl.trans(x = x + 0.3), "last.points")) + 
+  directlabels::geom_dl(aes(label = get), method = list(dl.trans(x = x + 0.5), "last.points", cex = 0.8)) + 
   theme_bw() +
   labs(title = "Andel motakker av offentlig hjelp", y = "prosent", x = "") + 
   theme(
@@ -440,6 +440,8 @@ gg.fig02T$layout$clip[gg.fig02T$layout$name == "panel"] <- "off"
 grid.draw(gg.fig02T)
 
 ```
+
+# Gjennomsnitt alder, per senter per år
 
 
 
