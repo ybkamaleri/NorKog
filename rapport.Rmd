@@ -412,12 +412,12 @@ setkey(offPro, yr)
 
 
 gg.fig02 <- ggplot(offPro, aes(as.factor(yr), pros, group = get, color = as.factor(get))) +
-  geom_line(size = 1) +
-  geom_point(stat = "identity") +
+  geom_line(size = 0.4) +
+  geom_point(aes(shape = as.factor(get)), stat = "identity") +
   scale_x_discrete(expand=c(0, 1.5)) +
-  geom_text(aes(label = format(pros, digits = 1)), vjust = -1.2, color = "grey40", size = 3) +
+  geom_text(aes(label = format(pros, digits = 1)), vjust = -0.6, color = "grey50", size = 2.8) +
   ## dl.trans for å posisjonere hvor teksten skal vises
-  directlabels::geom_dl(aes(label = get), method = list(dl.trans(x = x + 0.5), "last.points", cex = 0.8)) + 
+  directlabels::geom_dl(aes(label = get), method = list(dl.trans(x = x + 0.5), "last.points", cex = 0.7)) + 
   theme_bw() +
   labs(title = "Andel motakker av offentlig hjelp", y = "prosent", x = "") + 
   theme(
