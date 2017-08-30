@@ -39,12 +39,13 @@ inspak <- function(pkg){
     install.packages(nypkg, dependencies = TRUE, repos = "http://cran.r-project.org")
 }
 
-pakke <- c("data.table", "ggplot2", "grid", "knitr", "kableExtra")
+pakke <- c("data.table", "ggplot2", "directlabels", "grid", "knitr", "kableExtra")
 inspak(pakke)
 
 ## Upload libraries
 library(data.table)
 library(ggplot2)
+library(directlabels)
 library(knitr)
 library(grid)
 library(kableExtra)
@@ -133,7 +134,7 @@ inkl <- Data[, length(unique(Navn))]
 
 ```
 
-Det er `r inkl` sentre inkludert i analysen. [Her kan det ligge mer tekst om det er ønkelig]
+Det er `r inkl` sentre inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
 
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 
@@ -223,7 +224,9 @@ knitr::kable(tab02all)
 
 # Demografiske variabler, gjennomsnitt per senter
 
-Mangler [kodebok] for **Kjønn** og **Sivil status** i dokumentet 
+Mangler [kodebok] for **Kjønn** og **Sivil status** i dokumentet.
+
+**OBS!** Alle senter med deltaker <20 er eksludert i alle analysene herfra. 
 
 ```{r tab02data, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -381,25 +384,62 @@ kable(tab03miss, booktabs = TRUE)
 
 # Motakker av offentlig hjelp
 
-Andel av motakker av offentlig hjelp 
 
-
-```{r fig02, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}    
+```{r fig02data, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}    
 
 ## Dataset med senter mer enn 20 (>20)
-offPro <- DataT02[, .N, by = .(yr2, get(v04))]
+offPro <- DataT02[, .N, by = .(yr, get(v04))]
 bNA(offPro, 99)
 
-offPro <- offPro[yr2 != 99]
-setkey(offPro, yr2)
-offPro[, sum := sum(N), by = yr2]
-offPro[, pros := N / sum * 100, by = .(yr2, get)]
+offPro <- offPro[yr != 99]
+setkey(offPro, yr)
+offPro[, sum := sum(N), by = yr]
+offPro[, pros := N / sum * 100, by = .(yr, get)][]
 
 
 ```                                           
 
+Andel motakker av offentlig hjelp. [*Jeg synes å presentere dataene som linje diagram belyser tydeligere tidstrend i dataene. Det er vanskeligere å se trend for de forskjellige kategoriene i stack diagram som foreslått*]
 
 
+```{r fig02, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+##labelling
+fig_lab <- c("Nei", "Ja", "Missing")
+offPro$get <- factor(offPro$get, levels = c(0,1,99),labels = fig_lab )
+
+## Value prosent when max "yr" by "get"
+setkey(offPro, yr)
+
+
+gg.fig02 <- ggplot(offPro, aes(as.factor(yr), pros, group = get, color = as.factor(get))) +
+  geom_line(size = 1) +
+  geom_point(stat = "identity") +
+  scale_x_discrete(expand=c(0, 1.5)) +
+  geom_text(aes(label = format(pros, digits = 1)), vjust = -1.2, color = "grey40", size = 3) +
+  ## dl.trans for å posisjonere hvor teksten skal vises
+  directlabels::geom_dl(aes(label = get), method = list(dl.trans(x = x + 0.3), "last.points")) + 
+  theme_bw() +
+  labs(title = "Andel motakker av offentlig hjelp", y = "prosent", x = "") + 
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 10, color = "black"),
+    plot.margin = unit(c(0,2,0.5,0.5), "cm"),
+    axis.text.y = element_text(size = 9, color = "black"),
+    axis.ticks.y = element_blank(),
+    axis.line.x = element_line(size = 0.5),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.title.y = element_text(size = 9),
+    axis.title.x = element_text(size = 9)
+  )
+
+gg.fig02T <- ggplot_gtable(ggplot_build(gg.fig02))
+gg.fig02T$layout$clip[gg.fig02T$layout$name == "panel"] <- "off"
+grid.draw(gg.fig02T)
+
+```
 
 
 
