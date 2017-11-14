@@ -6,3 +6,4 @@
 *.md
 /test/ggplot.R
 figures/  
+/*.html

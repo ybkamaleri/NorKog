@@ -3,7 +3,6 @@ title: "Rapport for NorKog"
 output:
   pdf_document: default
   html_document: default
-  word_document: default
 date: '`r format(Sys.Date(), "%d %b %Y")`'
 ---
 
@@ -20,8 +19,15 @@ yearMix <- 2008:2010
 
 
 
+###################
+## Variabler bruk
+
+
 
 ```
+
+
+
 
 
 ```{r file, echo=FALSE, warnings=FALSE, include=FALSE, message=FALSE}
@@ -51,8 +57,8 @@ library(grid)
 library(kableExtra)
 
 ############
-## DATA
 ############
+## DATA
 filDir <- getwd()
 sr01 <- paste0(filDir,"/", "datakilder1.R")
 sr02 <- paste0(filDir, "/", "datakilder2.R")
@@ -89,7 +95,7 @@ printDoc <- getOutputFormat() #finne ut document type output
 ## FARGER
 ###########
 ColPoint <- "#FF3333" #farge for point
-cols <- c("#99CCFF", "#0066CC", "#003366") #farge for flere bar
+cols <- c("#C6DBEF", "#4292C6", "#084594") #farge for flere bar
 colb <- "#99CCFF" #farge for en søyle
 options(digits = 3)
 setkey(RegData, SENTER)
@@ -137,7 +143,7 @@ inkl <- Data[, length(unique(Navn))]
 Det er `r inkl` sentre inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
 
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
-
+## Bestemmer posisjonere for tekst - < 100 utenfor søyle
 innText <- fig01Data[, pos := ifelse(N < 100, 0, 1)]
 title <- paste0("Antall inkluderte per senter (N = ", NN, ")")
 
@@ -240,7 +246,9 @@ setkey(DataT02, Navn)
 
 ## Alder beregn fra år hentes fra DATO_US
 ## rename FØDSELSÅ to "byear" 
-vb01 <- grepl("DSELS", colnames(DataT02), fixed = TRUE)
+
+vb01 <- grep("DSELS", colnames(DataT02), fixed = TRUE)#finne index for FØDSELSÅ
+
 colnames(DataT02)[vb01] <- "byear"
 DataT02[, alder := yr - byear] 
 DataT02[, alder := ifelse(is.na(alder), ALDER_PAS, alder)]
@@ -249,12 +257,20 @@ names(ageT02)[names(ageT02) == "V1"] <- "Alder"
 ## ageTot <- DataT02[, mean(alder, na.rm = TRUE)] #total mean alder
 
 ## Kjønn - kodeboke for menn og kvinner
+vb03 <- grep("^KJ.*NN$", colnames(DataT02))
+
+colnames(DataT02)[vb03] <- "kjonn"
+kjonnval <- c("Kvinne", "Mann")
+DataT02$kjonn <- factor(DataT02$kjonn,
+                        levels = c(0, 1),
+                        labels = kjonnval)
+
 
 ## Sivil status -- kodeboke
 
 ## Utdannelse
 ## Bytt ÅR_SKOLE til "skoleyr"
-vb02 <- grepl("_SKOLE", colnames(DataT02), fixed = TRUE)
+vb02 <- grep("_SKOLE$", colnames(DataT02))#finne index for ÅR_SKOLE
 colnames(DataT02)[vb02] <- "skoleyr"
 DataT02[, skole := as.numeric(skoleyr)]
 skoT02 <- DataT02[, mean(skole, na.rm = TRUE), by = Navn]
@@ -301,7 +317,6 @@ komT02 <- komT02Tab[, c(1, 4)]
 ## ## total komparent
 ## komTotValue <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100)]
 ## komTot <- komTotValue$V2[komTotValue$V1 == 1][1]
-
 
 ### TOTAL
 ## Mean alder og utdannelse Total
@@ -404,20 +419,21 @@ Andel motakker av offentlig hjelp. [*Jeg synes å presentere dataene som linje d
 
 ```{r fig02, echo=FALSE, warning=FALSE, message=FALSE, fig.height=3.5, fig.width=6,fig.align='center'}
 ##labelling
-fig_lab <- c("Nei", "Ja", "Missing")
+fig_lab <- c("Nei", "Ja", "Ingen info")
 offPro$get <- factor(offPro$get, levels = c(0,1,99),labels = fig_lab )
 
 ## Value prosent when max "yr" by "get"
 setkey(offPro, yr)
 
 
-gg.fig02 <- ggplot(offPro, aes(as.factor(yr), pros, group = get, color = as.factor(get))) +
-  geom_line(size = 0.4) +
-  geom_point(aes(shape = as.factor(get)), stat = "identity") +
+gg.fig02 <- ggplot(offPro, aes(as.factor(yr), pros, group = get)) +
+  geom_line(aes(color = as.factor(get)), size = 0.4) +
+  geom_point(aes(shape = as.factor(get), color = as.factor(get)), stat = "identity") +
   scale_x_discrete(expand=c(0, 1.5)) +
   geom_text(aes(label = format(pros, digits = 1)), vjust = -0.6, color = "grey50", size = 2.8) +
   ## dl.trans for å posisjonere hvor teksten skal vises
-  directlabels::geom_dl(aes(label = get), method = list(dl.trans(x = x + 0.5), "last.points", cex = 0.7)) + 
+  directlabels::geom_dl(aes(label = get), method = list(dl.trans(x = x + 0.5), "last.points", cex = 0.7)) +
+  ggplot2::scale_color_manual(values = cols) + 
   theme_bw() +
   labs(title = "Andel motakker av offentlig hjelp", y = "prosent", x = "") + 
   theme(
@@ -443,7 +459,7 @@ grid.draw(gg.fig02T)
 
 # Gjennomsnitt alder, per senter per år
 
-
+Her bør nok tenke om igjen hva vil dere fortelle i figuren. 
 
 
 
