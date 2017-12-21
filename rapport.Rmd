@@ -1,8 +1,7 @@
 ---
 title: "Rapport for NorKog"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document
 date: '`r format(Sys.Date(), "%d %b %Y")`'
 ---
 
@@ -14,14 +13,11 @@ rm(list = ls())
 ########################
 
 ## Hvilket år skal kombineres? - endres etter behov
-yearMix <- 2008:2010
-
-
+yearMix <- 2008:2014
 
 
 ###################
 ## Variabler bruk
-
 
 
 ```
@@ -76,20 +72,20 @@ knitr::opts_chunk$set(fig.path = 'figures/nkog-') #mappe for figurer
 ## Output doc
 ##############
 
-## outDoc <- knitr::opts_knit$git("rmarkdown.pandoc.to") #doc type output html,latex eller docx
+## ## outDoc <- knitr::opts_knit$git("rmarkdown.pandoc.to") #doc type output html,latex eller docx
 
-getOutputFormat <- function() {
-  output <- rmarkdown:::parse_yaml_front_matter(
-    readLines(knitr::current_input())
-  )$output
-  if (is.list(output)){
-    return(names(output)[1])
-  } else {
-    return(output[1])
-  }
-}
+## getOutputFormat <- function() {
+##   output <- rmarkdown:::parse_yaml_front_matter(
+##     readLines(knitr::current_input())
+##   )$output
+##   if (is.list(output)){
+##     return(names(output)[1])
+##   } else {
+##     return(output[1])
+##   }
+## }
 
-printDoc <- getOutputFormat() #finne ut document type output
+## printDoc <- getOutputFormat() #finne ut document type output
 
 ###########
 ## FARGER
@@ -143,17 +139,22 @@ inkl <- Data[, length(unique(Navn))]
 Det er `r inkl` sentre inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
 
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+## Legge til gjennomsnitt
+DTsnitt <- data.table(Navn = "Gjennomsnitt", N = NN / sn)
+fig01Data <- rbindlist(list(fig01Data, DTsnitt)) #kombinere gjennomsnitt til datasett
+
 ## Bestemmer posisjonere for tekst - < 100 utenfor søyle
 innText <- fig01Data[, pos := ifelse(N < 100, 0, 1)]
 title <- paste0("Antall inkluderte per senter (N = ", NN, ")")
 
 gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
-  geom_bar(stat = "identity", fill = colb) +
+  geom_bar(stat = "identity", aes(fill = Navn == 'Gjennomsnitt')) +
   geom_text(data = innText[pos == 1], aes(x = Navn, y = N - 50, label = N), size = 2.5) +
   geom_text(data = innText[pos == 0], aes(x = Navn, y = N + 25, label = N), size = 2.5) +
   coord_flip() +
   labs(title = title, y = "", x = "") +
   scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_manual(values = cols) + 
   theme(
     plot.title = element_text(size = 10, color = "black"), 
     plot.margin = unit(c(0,2,0.5,0.5), "cm"),
@@ -165,7 +166,8 @@ gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
     panel.grid.minor.y = element_blank(),
     panel.grid.major.x = element_blank(),
     axis.title.y = element_text(size = 9),
-    axis.title.x = element_text(size = 9))
+    axis.title.x = element_text(size = 9),
+    legend.position = "none")
 
 gg.fig01T <- ggplot_gtable(ggplot_build(gg.fig1))
 gg.fig01T$layout$clip[gg.fig01T$layout$name == "panel"] <- "off"
@@ -175,23 +177,29 @@ grid.draw(gg.fig01T)
 # Antall inkluderte per senter per år
 
 ```{r tab01data, echo=FALSE, message=FALSE, warning=FALSE}
-Data <- Data[, date_us := as.IDate(DATO_US, format = "%m/%d/%Y")] #konvertere DATO_US til date.format
-Data[, yr := as.integer(format(date_us, "%Y"))] #lage kolone "yr" for år fra DATO_US
-dateNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
+## ## Fra først data sett
+## Data <- Data[, date_us := as.IDate(DATO_US, format = "%m/%d/%Y")] #konvertere DATO_US til date.format
+## Data[, yr := as.integer(format(date_us, "%Y"))] #lage kolone "yr" for år fra DATO_US
+## yrNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
+
+yr <- "US_AARSTALL"
+
+yrNA <- Data[is.na(get(yr)), .N]
+
 
 ###############################
 ## Slå sammen år til en kolone
 ###############################
 yrmix <- yearMix #slå sammen disse år tallene
 yrtab <- paste0(min(yearMix),"-", max(yearMix)) #tekst til tabell
-Data[, yr2 := ifelse(yr %in% yrmix, 2000, yr)] #dummy for 2008:2012 er 2000
+Data[, yr2 := ifelse(get(yr) %in% yrmix, 2000, get(yr))] #dummy for 2008:2012 er 2000
 
 ## Dataset uten NA i DATO_US
-Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
+Datayr <- Data[, .SD[!is.na(get(yr))]] #exclude DATO_US == NA
 
 ```
 
-Det er `r dateNA` missing data i **DATO_US**. Derfor antallet er ikke lik som i forrige figur
+Det er `r yrNA` missing data i **DATO_US**. Derfor antallet er ikke lik som i forrige figur
 
 ```{r tab01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 
