@@ -15,6 +15,8 @@ rm(list = ls())
 ## Hvilket år skal kombineres? - endres etter behov
 yearMix <- 2008:2014
 
+## deling for tekst posisjon i bar figur 1
+deltxt <- 80
 
 ###################
 ## Variabler bruk
@@ -119,7 +121,7 @@ Det er `r inkl` poliklinikker inkludert i analysen. [*Her kan det ligge mer teks
 DTsnitt <- data.table(Navn = "Gjennomsnitt", N = NN / sn)
 fig01Data <- rbindlist(list(fig01Data, DTsnitt)) #kombinere gjennomsnitt til datasett
 
-innText <- fig01Data[, pos := ifelse(N < 80, 0, 1)]
+innText <- fig01Data[, pos := ifelse(N < deltxt, 0, 1)]
 title <- paste0("Antall inkluderte per senter (N = ", NN, ")")
 
 gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
@@ -225,7 +227,7 @@ kable(tab02all, format = "latex", booktabs = TRUE) %>%
 \pagebreak
 
 
-# Demografiske variabler, gjennomsnitt per senter
+# Demografiske variabler, gjennomsnitt per poliklinikk og missing
 
 Mangler [kodebok] for **Kjønn** og **Sivil status** i dokumentet.
 
@@ -258,7 +260,7 @@ DataT02[, alder := get(vb01)]
 ageT02 <- DataT02[, list(Alder = mean(as.numeric(get(vb01)), na.rm = TRUE)), by = Navn]
 
 
-## Kjønn - kodeboke for menn og kvinner
+## Kjønn - andel per senter
 vb03 <- grep("KJONN", colnames(DataT02))
 
 colnames(DataT02)[vb03] <- "kjonn"
@@ -267,9 +269,32 @@ DataT02$kjonn <- factor(DataT02$kjonn,
                         levels = c(0, 1),
                         labels = kjonnval)
 
+vb03mk <- DataT02[, .N, by = Navn] # antall per poliklinikk
+vb03k <- DataT02[kjonn == "Kvinne", .N, by = Navn] # antall kvinner
+names(vb03k)[2] <- "n"
+setkey(vb03mk, Navn)
+setkey(vb03k, Navn)
+kvinne <- vb03k[vb03mk]
+kvinne[, kvinne := n / N * 100, by = Navn]
+kvinneT03 <- kvinne[, c(1, 4)]
 
 
-## Sivil status -- kodeboke
+## Sivil status
+sivil01 <- "SIVILSTA"
+setnames(DataT02, sivil01, "sivil") #gir nytt navn
+
+sivil02na <- DataT02[!is.na(sivil), .N, by = Navn]
+sivil02ja <- DataT02[sivil == 1, .N, by = Navn]
+setnames(sivil02ja, "N", "n")
+
+setkey(sivil02na, Navn)
+setkey(sivil02ja, Navn)
+
+sivil02per <- sivil02ja[sivil02na]
+sivil02per[, sivil := n / N * 100, by = Navn]
+sivil02all <- sivil02per[, c(1, 4)]
+
+
 
 ## Utdannelse
 ## Bytt ÅR_SKOLE til "skoleyr"
@@ -321,13 +346,33 @@ komT02 <- komT02Tab[, c(1, 4)]
 ## komTotValue <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100)]
 ## komTot <- komTotValue$V2[komTotValue$V1 == 1][1]
 
+##############
 ### TOTAL
+##############
+
 ## Mean alder og utdannelse Total
 Tot01 <-  DataT02[, lapply(.SD, function(x) mean(x, na.rm = T)), .SDcol = c("alder", "skole")]
+
+
+## Andel kvinner
+totK <- DataT02[kjonn == "Kvinne", .N]
+totAlle <- dim(DataT02)[1]
+TotKvinner <- totK / totAlle * 100
+
+## Andel gift/samboer
+sivilNA <- DataT02[!is.na(sivil), .N]
+
+
+
 
 ## Andel svarte Ja OFF_HJEL eksludert NA
 offNA <- DataT02[!is.na(get(v04)), .N] #OFF_HJEL uten NA
 totOff <- DataT02[, lapply(.SD, function(x) tabulate(x) / offNA * 100), .SDcol = c(v04)] #uten NA OFF_HJEL
+
+## enkle løsning
+off01 <- DataT02[get(v04) == 1, .N]
+totOff01 <- off01 / offNA * 100
+
 ## Andel svarte Ja KOMPAREN eksludert NA
 komNA <- DataT02[!is.na(get(v05)), .N] #KOMPAREN uten NA
 totKom <- DataT02[, lapply(.SD, function(x) tabulate(x) / komNA * 100), .SDcol = c(v05)] #uten NA OFF_HJEL
@@ -377,25 +422,13 @@ colnames(tab03all) <- colAll
 lastLine <- dim(tab03all)[1]
 
 
-## switch(printDoc,
-##        "pdf_document" = {
-
-##          kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
-##            kable_styling() %>%
-##            row_spec(lastLine, bold = TRUE) %>%
-##            add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
-##                               "Komparent" = 1))
-##        },
-##        "word_document" = {kable(tab03all)},
-##        "html_document" = {kable(tab03all)})
-
 kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
-  kable_styling(latex_options = c("hold_position")) %>%
-  row_spec(lastLine, bold = TRUE) %>%
-  add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
-                     "Komparent" = 1))
+                     kable_styling(latex_options = c("hold_position")) %>%
+                     row_spec(lastLine, bold = TRUE) %>%
+                     add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
+                                        "Komparent" = 1))
 
-## knitr::kable(tab03all) 
+                   ## knitr::kable(tab03all) 
 
 ```
 
