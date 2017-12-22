@@ -376,7 +376,14 @@ totOff01 <- off01 / offNA * 100
 ## Andel svarte Ja KOMPAREN eksludert NA
 komNA <- DataT02[!is.na(get(v05)), .N] #KOMPAREN uten NA
 totKom <- DataT02[, lapply(.SD, function(x) tabulate(x) / komNA * 100), .SDcol = c(v05)] #uten NA OFF_HJEL
+
+tot01 <- DataT02[get(v05) == 1, .N]
+totKom01 <- tot01 / komNA * 100
+
+Tot022 <- data.table(off = totOff01, kom = totKom01)
+
 Tot02 <- cbind(totOff, totKom)
+
 
 ## Andel svarte Ja OFF_HJEL og KOMPAREN
 Tot02na <- DataT02[, lapply(.SD, function(x) tabulate(x) / .N * 100), .SDcol = c(v04, v05) ] #inkludert NA
