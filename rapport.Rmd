@@ -28,12 +28,6 @@ yearMix <- 2008:2014
 
 ```{r file, echo=FALSE, warnings=FALSE, include=FALSE, message=FALSE}
 
-## ## Default repo
-## local({r <- getOption("repos")
-##   r["CRAN"] <- "http://cran.r-project.org" 
-##   options(repos=r)
-## })
-
 ## henter pakker eller installere om ikke finnes
 inspak <- function(pkg){
   nypkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
@@ -41,7 +35,7 @@ inspak <- function(pkg){
     install.packages(nypkg, dependencies = TRUE, repos = "http://cran.r-project.org")
 }
 
-pakke <- c("data.table", "ggplot2", "directlabels", "grid", "knitr", "kableExtra")
+pakke <- c("data.table", "ggplot2", "directlabels", "grid", "knitr", "kableExtra", "haven")
 inspak(pakke)
 
 ## Upload libraries
@@ -51,6 +45,7 @@ library(directlabels)
 library(knitr)
 library(grid)
 library(kableExtra)
+library(haven) #for å lese .sav fil
 
 ############
 ############
@@ -68,24 +63,6 @@ source(data)
 
 knitr::opts_chunk$set(fig.path = 'figures/nkog-') #mappe for figurer
 
-##############
-## Output doc
-##############
-
-## ## outDoc <- knitr::opts_knit$git("rmarkdown.pandoc.to") #doc type output html,latex eller docx
-
-## getOutputFormat <- function() {
-##   output <- rmarkdown:::parse_yaml_front_matter(
-##     readLines(knitr::current_input())
-##   )$output
-##   if (is.list(output)){
-##     return(names(output)[1])
-##   } else {
-##     return(output[1])
-##   }
-## }
-
-## printDoc <- getOutputFormat() #finne ut document type output
 
 ###########
 ## FARGER
@@ -94,6 +71,7 @@ ColPoint <- "#FF3333" #farge for point
 cols <- c("#C6DBEF", "#4292C6", "#084594") #farge for flere bar
 colb <- "#99CCFF" #farge for en søyle
 options(digits = 3)
+setDT(RegData)
 setkey(RegData, SENTER)
 
 ###########
@@ -143,8 +121,7 @@ Det er `r inkl` sentre inkludert i analysen. [*Her kan det ligge mer tekst om de
 DTsnitt <- data.table(Navn = "Gjennomsnitt", N = NN / sn)
 fig01Data <- rbindlist(list(fig01Data, DTsnitt)) #kombinere gjennomsnitt til datasett
 
-## Bestemmer posisjonere for tekst - < 100 utenfor søyle
-innText <- fig01Data[, pos := ifelse(N < 100, 0, 1)]
+innText <- fig01Data[, pos := ifelse(N < 80, 0, 1)]
 title <- paste0("Antall inkluderte per senter (N = ", NN, ")")
 
 gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
@@ -183,8 +160,9 @@ grid.draw(gg.fig01T)
 ## yrNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
 
 yr <- "US_AARSTALL"
+Data[, yr := get(yr)]
 
-yrNA <- Data[is.na(get(yr)), .N]
+yrNA <- Data[is.na(yr), .N]
 
 
 ###############################
@@ -192,10 +170,10 @@ yrNA <- Data[is.na(get(yr)), .N]
 ###############################
 yrmix <- yearMix #slå sammen disse år tallene
 yrtab <- paste0(min(yearMix),"-", max(yearMix)) #tekst til tabell
-Data[, yr2 := ifelse(get(yr) %in% yrmix, 2000, get(yr))] #dummy for 2008:2012 er 2000
+Data[, yr2 := ifelse(yr %in% yrmix, 2000, yr)] #dummy for 2008:2012 er 2000
 
 ## Dataset uten NA i DATO_US
-Datayr <- Data[, .SD[!is.na(get(yr))]] #exclude DATO_US == NA
+Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
 
 ```
 
@@ -252,20 +230,25 @@ setkey(DataT02, Navn)
 
 #OBS! kan lage problem med norske bokstave
 
-## Alder beregn fra år hentes fra DATO_US
-## rename FØDSELSÅ to "byear" 
+## ## Alder beregn fra år hentes fra DATO_US
+## ## rename FØDSELSÅ to "byear" 
 
-vb01 <- grep("DSELS", colnames(DataT02), fixed = TRUE)#finne index for FØDSELSÅ
+## vb01 <- grep("DSELS", colnames(DataT02), fixed = TRUE)#finne index for FØDSELSÅ
+## colnames(DataT02)[vb01] <- "byear"
+## DataT02[, alder := yr - byear] 
+## DataT02[, alder := ifelse(is.na(alder), ALDER_PAS, alder)]
+## ageT02 <- DataT02[, mean(alder, na.rm = TRUE), by = Navn]
+## names(ageT02)[names(ageT02) == "V1"] <- "Alder"
+## ## ageTot <- DataT02[, mean(alder, na.rm = TRUE)] #total mean alder
 
-colnames(DataT02)[vb01] <- "byear"
-DataT02[, alder := yr - byear] 
-DataT02[, alder := ifelse(is.na(alder), ALDER_PAS, alder)]
-ageT02 <- DataT02[, mean(alder, na.rm = TRUE), by = Navn]
-names(ageT02)[names(ageT02) == "V1"] <- "Alder"
-## ageTot <- DataT02[, mean(alder, na.rm = TRUE)] #total mean alder
+
+vb01 <- "ALDER"
+DataT02[, alder := get(vb01)]
+ageT02 <- DataT02[, list(Alder = mean(as.numeric(get(vb01)), na.rm = TRUE)), by = Navn]
+
 
 ## Kjønn - kodeboke for menn og kvinner
-vb03 <- grep("^KJ.*NN$", colnames(DataT02))
+vb03 <- grep("KJONN", colnames(DataT02))
 
 colnames(DataT02)[vb03] <- "kjonn"
 kjonnval <- c("Kvinne", "Mann")
@@ -274,11 +257,12 @@ DataT02$kjonn <- factor(DataT02$kjonn,
                         labels = kjonnval)
 
 
+
 ## Sivil status -- kodeboke
 
 ## Utdannelse
 ## Bytt ÅR_SKOLE til "skoleyr"
-vb02 <- grep("_SKOLE$", colnames(DataT02))#finne index for ÅR_SKOLE
+vb02 <- grep("SKOLEGANG", colnames(DataT02))#finne index for ÅR_SKOLE
 colnames(DataT02)[vb02] <- "skoleyr"
 DataT02[, skole := as.numeric(skoleyr)]
 skoT02 <- DataT02[, mean(skole, na.rm = TRUE), by = Navn]
@@ -382,17 +366,23 @@ colnames(tab03all) <- colAll
 lastLine <- dim(tab03all)[1]
 
 
-switch(printDoc,
-       "pdf_document" = {
+## switch(printDoc,
+##        "pdf_document" = {
 
-         kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
-           kable_styling() %>%
-           row_spec(lastLine, bold = TRUE) %>%
-           add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
-                              "Komparent" = 1))
-       },
-       "word_document" = {kable(tab03all)},
-       "html_document" = {kable(tab03all)})
+##          kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
+##            kable_styling() %>%
+##            row_spec(lastLine, bold = TRUE) %>%
+##            add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
+##                               "Komparent" = 1))
+##        },
+##        "word_document" = {kable(tab03all)},
+##        "html_document" = {kable(tab03all)})
+
+kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
+  kable_styling() %>%
+  row_spec(lastLine, bold = TRUE) %>%
+  add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
+                     "Komparent" = 1))
 
 ## knitr::kable(tab03all) 
 
