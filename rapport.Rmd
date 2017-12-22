@@ -25,7 +25,6 @@ yearMix <- 2008:2014
 
 
 
-
 ```{r file, echo=FALSE, warnings=FALSE, include=FALSE, message=FALSE}
 
 ## henter pakker eller installere om ikke finnes
@@ -87,8 +86,7 @@ bNA <- function(DT, na = 0){
 
 ```
 
-
-# Antall inkluderte per senter
+# Antall inkluderte per poliklinikk
 
 ```{r fig01data, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -114,7 +112,7 @@ inkl <- Data[, length(unique(Navn))]
 
 ```
 
-Det er `r inkl` sentre inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
+Det er `r inkl` poliklinikker inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
 
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 ## Legge til gjennomsnitt
@@ -151,7 +149,10 @@ gg.fig01T$layout$clip[gg.fig01T$layout$name == "panel"] <- "off"
 grid.draw(gg.fig01T)
 ```
 
-# Antall inkluderte per senter per år
+\pagebreak
+
+
+# Antall inkluderte per poliklinikk per år
 
 ```{r tab01data, echo=FALSE, message=FALSE, warning=FALSE}
 ## ## Fra først data sett
@@ -159,8 +160,13 @@ grid.draw(gg.fig01T)
 ## Data[, yr := as.integer(format(date_us, "%Y"))] #lage kolone "yr" for år fra DATO_US
 ## yrNA <- Data[is.na(yr), .N] # Antall DATO_US == NA
 
-yr <- "US_AARSTALL"
-Data[, yr := get(yr)]
+#### Gir nytt variablenavn
+############################
+## yr <- "US_AARSTALL"
+## Data[, yr := get(yr)]
+
+yr <- quote(US_AARSTALL)
+Data[, yr := eval(yr)]
 
 yrNA <- Data[is.na(yr), .N]
 
@@ -177,7 +183,7 @@ Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
 
 ```
 
-Det er `r yrNA` missing data i **DATO_US**. Derfor antallet er ikke lik som i forrige figur
+Det er `r yrNA` missing data i **US_AARSTALL**. Derfor antallet er ikke lik som i forrige figur
 
 ```{r tab01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 
@@ -188,7 +194,7 @@ senNyr1 <- dcast(senNyrNA, Navn ~ yr2, value.var = "n")
 
 bNA(DT = senNyr1, na = 0) #bytt all NA til 0
 
-## Antall per senter
+## Antall total per senter
 senN <- Datayr[, .N, by = .(Navn)]
 names(senN)[names(senN) == "N"] <- "Total"
 
@@ -204,15 +210,20 @@ yearN1$Total <- dim(Datayr)[1]
 ## Tabell
 tab02all <- rbind(tab02, yearN1)
 names(tab02all)[names(tab02all) == 2000] <- yrtab #gi col navn
-names(tab02all)[names(tab02all) == "Navn"] <- "Senter" #col navn Senter
+names(tab02all)[names(tab02all) == "Navn"] <- "Poliklinikk" #col navn Senter
 
 ## print tabell
-## kable(tab02all, format = "latex", booktabs = TRUE) %>%
-##   kable_styling()
-  
-knitr::kable(tab02all)
+rowspec <- dim(tab02all)[1]
+kable(tab02all, format = "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("repeat_header", "hold_position")) %>%
+  row_spec(rowspec, bold = TRUE) 
+
+## knitr::kable(tab02all)
 
 ```
+
+\pagebreak
+
 
 # Demografiske variabler, gjennomsnitt per senter
 
@@ -379,7 +390,7 @@ lastLine <- dim(tab03all)[1]
 ##        "html_document" = {kable(tab03all)})
 
 kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
-  kable_styling() %>%
+  kable_styling(latex_options = c("hold_position")) %>%
   row_spec(lastLine, bold = TRUE) %>%
   add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
                      "Komparent" = 1))
@@ -394,6 +405,8 @@ Alle missing er eksludert i analysen. De er som følgende:
 kable(tab03miss, booktabs = TRUE)
 
 ```
+
+\pagebreak
 
 # Motakker av offentlig hjelp
 
