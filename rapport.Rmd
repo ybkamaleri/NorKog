@@ -99,15 +99,15 @@ setkey(senter, Senter) #key er senter kode
 
 ## Slå sammen senternavn og dataset
 Data <- merge(RegData, senter, by.x = "SENTER", by.y = "Senter", all.x = TRUE)
-fig01Data <- Data[, .N, by = Navn]
+fig00Data <- Data[, .N, by = Navn]
 
 
 sn <- dim(senter)[1] #antall sentre
 NN <- dim(RegData)[1] #antall pasienter i datasettet
 
 ## Merge
-missn <- fig01Data[is.na(N), .N] #antall senter med misssing data
-fig01Data <- fig01Data[is.na(N), N := 0]
+missn <- fig00Data[is.na(N), .N] #antall senter med misssing data
+fig01Data <- fig00Data[is.na(N), N := 0]
 
 inkn <- sn - missn #antall senter uten missing data
 inkl <- Data[, length(unique(Navn))]
@@ -119,15 +119,17 @@ Det er `r inkl` poliklinikker inkludert i analysen. [*Her kan det ligge mer teks
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 ## Legge til gjennomsnitt
 DTsnitt <- data.table(Navn = "Gjennomsnitt", N = NN / sn)
-fig01Data <- rbindlist(list(fig01Data, DTsnitt)) #kombinere gjennomsnitt til datasett
+fig02Data <- rbindlist(list(fig01Data, DTsnitt)) #kombinere gjennomsnitt til datasett
 
-innText <- fig01Data[, pos := ifelse(N < deltxt, 0, 1)]
+innText <- fig02Data[, pos := ifelse(N < deltxt, 0, 1)]
 title <- paste0("Antall inkluderte per senter (N = ", NN, ")")
+position = position_dodge(width = .80)
+width = .80
 
-gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
-  geom_bar(stat = "identity", aes(fill = Navn == 'Gjennomsnitt')) +
-  geom_text(data = innText[pos == 1], aes(x = Navn, y = N - 50, label = N), size = 2.5) +
-  geom_text(data = innText[pos == 0], aes(x = Navn, y = N + 25, label = N), size = 2.5) +
+ggplot(innText, aes(reorder(Navn, N), N, label = N)) +
+  geom_bar(width = width, position = position, stat = "identity", aes(fill = Navn == 'Gjennomsnitt')) +
+  geom_text(data = innText[pos == 1], hjust = 1.5, size = 2.5) +
+  geom_text(data = innText[pos == 0],, hjust = -0.5, size = 2.5) +
   coord_flip() +
   labs(title = title, y = "", x = "") +
   scale_y_continuous(expand = c(0, 0)) +
@@ -146,9 +148,9 @@ gg.fig1 <- ggplot(innText, aes(reorder(Navn, N), N)) +
     axis.title.x = element_text(size = 9),
     legend.position = "none")
 
-gg.fig01T <- ggplot_gtable(ggplot_build(gg.fig1))
-gg.fig01T$layout$clip[gg.fig01T$layout$name == "panel"] <- "off"
-grid.draw(gg.fig01T)
+## gg.fig01T <- ggplot_gtable(ggplot_build(gg.fig1))
+## gg.fig01T$layout$clip[gg.fig01T$layout$name == "panel"] <- "off"
+## grid.draw(gg.fig01T)
 ```
 
 \pagebreak
