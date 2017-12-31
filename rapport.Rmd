@@ -18,9 +18,6 @@ yearMix <- 2008:2014
 ## deling for tekst posisjon i bar figur 1
 deltxt <- 80
 
-###################
-## Variabler bruk
-
 
 ```
 
@@ -61,8 +58,8 @@ source(data)
 #############
 ## Knitr opt
 #############
-
-knitr::opts_chunk$set(fig.path = 'figures/nkog-') #mappe for figurer
+##lager mappe for å lage figurer
+knitr::opts_chunk$set(fig.path = 'figures/nkog-')
 
 
 ###########
@@ -85,12 +82,9 @@ bNA <- function(DT, na = 0){
     set(DT,which(is.na(DT[[j]])),j, na) 
 }
 
-
-```
-
-# Antall inkluderte per poliklinikk
-
-```{r fig01data, echo=FALSE, message=FALSE, warning=FALSE}
+###############
+## Senter navn
+################
 
 ## Lister av navn for sentrene
 sentfil <- paste0(filDir, "/doc/senter.csv")
@@ -99,15 +93,20 @@ setkey(senter, Senter) #key er senter kode
 
 ## Slå sammen senternavn og dataset
 Data <- merge(RegData, senter, by.x = "SENTER", by.y = "Senter", all.x = TRUE)
+
+```
+
+# Antall inkluderte per poliklinikk
+
+```{r fig01data, echo=FALSE, message=FALSE, warning=FALSE}
+## Antall pasienter per senter
 fig00Data <- Data[, .N, by = Navn]
-
-
 sn <- dim(senter)[1] #antall sentre
-NN <- dim(RegData)[1] #antall pasienter i datasettet
+NN <- dim(RegData)[1] #antall pasienter 
 
 ## Merge
 missn <- fig00Data[is.na(N), .N] #antall senter med misssing data
-fig01Data <- fig00Data[is.na(N), N := 0]
+fig01Data <- fig00Data[is.na(N), N := 0] #missing til 0
 
 inkn <- sn - missn #antall senter uten missing data
 inkl <- Data[, length(unique(Navn))]
@@ -432,12 +431,12 @@ lastLine <- dim(tab03all)[1]
 
 
 kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
-                     kable_styling(latex_options = c("hold_position")) %>%
-                     row_spec(lastLine, bold = TRUE) %>%
-                     add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
-                                        "Komparent" = 1))
+  kable_styling(latex_options = c("hold_position")) %>%
+  row_spec(lastLine, bold = TRUE) %>%
+  add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
+                     "Komparent" = 1))
 
-                   ## knitr::kable(tab03all) 
+## knitr::kable(tab03all) 
 
 ```
 
