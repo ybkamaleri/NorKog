@@ -116,7 +116,8 @@ inkl <- Data[, length(unique(Navn))]
 Det er `r inkl` poliklinikker inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
 
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
-## Legge til gjennomsnitt
+
+## Legge til gjennomsnitt hele landet
 DTsnitt <- data.table(Navn = "Gjennomsnitt", N = NN / sn)
 fig02Data <- rbindlist(list(fig01Data, DTsnitt)) #kombinere gjennomsnitt til datasett
 
@@ -165,11 +166,11 @@ ggplot(innText, aes(reorder(Navn, N), N, label = N)) +
 
 #### Gir nytt variablenavn
 ############################
-## yr <- "US_AARSTALL"
+yr <- "US_AARSTALL"
 ## Data[, yr := get(yr)]
-
-yr <- quote(US_AARSTALL)
-Data[, yr := eval(yr)]
+## yr <- quote(US_AARSTALL)
+## Data[, yr := eval(yr)]
+setnames(Data, yr, "yr") 
 
 yrNA <- Data[is.na(yr), .N]
 
@@ -177,9 +178,9 @@ yrNA <- Data[is.na(yr), .N]
 ###############################
 ## Slå sammen år til en kolone
 ###############################
-yrmix <- yearMix #slå sammen disse år tallene
+yrmix <- yearMix #slå sammen disse årstallene
 yrtab <- paste0(min(yearMix),"-", max(yearMix)) #tekst til tabell
-Data[, yr2 := ifelse(yr %in% yrmix, 2000, yr)] #dummy for 2008:2012 er 2000
+Data[, yr2 := ifelse(yr %in% yrmix, 9999, yr)] #dummy for 2008:2012 er 9999
 
 ## Dataset uten NA i DATO_US
 Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
@@ -212,7 +213,7 @@ yearN1$Total <- dim(Datayr)[1]
 
 ## Tabell
 tab02all <- rbind(tab02, yearN1)
-names(tab02all)[names(tab02all) == 2000] <- yrtab #gi col navn
+names(tab02all)[names(tab02all) == 9999] <- yrtab #gi col navn
 names(tab02all)[names(tab02all) == "Navn"] <- "Poliklinikk" #col navn Senter
 
 ## print tabell
