@@ -180,7 +180,7 @@ yrNA <- Data[is.na(yr), .N]
 ###############################
 yrmix <- yearMix #slå sammen disse årstallene
 yrtab <- paste0(min(yearMix),"-", max(yearMix)) #tekst til tabell
-Data[, yr2 := ifelse(yr %in% yrmix, 9999, yr)] #dummy for 2008:2012 er 9999
+Data[, yr2 := ifelse(yr %in% yrmix, 1000, yr)] #dummy for 2008:2012 er 1000
 
 ## Dataset uten NA i DATO_US
 Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
@@ -193,14 +193,19 @@ Det er `r yrNA` missing data i **US_AARSTALL**. Derfor antallet er ikke lik som 
 
 ## Antall per senter per år
 senNyrNA <- Datayr[, .N, by = .(Navn, yr2)]
-names(senNyrNA)[names(senNyrNA) == "N"] <- "n"
+## names(senNyrNA)[names(senNyrNA) == "N"] <- "n"
+setnames(senNyrNA, "N", "n")
+## kovertere til wide
 senNyr1 <- dcast(senNyrNA, Navn ~ yr2, value.var = "n")
 
 bNA(DT = senNyr1, na = 0) #bytt all NA til 0
 
 ## Antall total per senter
 senN <- Datayr[, .N, by = .(Navn)]
-names(senN)[names(senN) == "N"] <- "Total"
+
+## names(senN)[names(senN) == "N"] <- "Total"
+setnames(senN, old = "N", new = "Total")
+
 
 ## Kobinere antall per senter og total
 tab02 <- merge(senNyr1, senN, by="Navn")
@@ -213,8 +218,10 @@ yearN1$Total <- dim(Datayr)[1]
 
 ## Tabell
 tab02all <- rbind(tab02, yearN1)
-names(tab02all)[names(tab02all) == 9999] <- yrtab #gi col navn
-names(tab02all)[names(tab02all) == "Navn"] <- "Poliklinikk" #col navn Senter
+## names(tab02all)[names(tab02all) == 1000] <- yrtab #gi col navn
+## names(tab02all)[names(tab02all) == "Navn"] <- "Poliklinikk" #col navn Senter
+setnames(tab02all, c(1000, "Navn"), c(yrtab, "Poliklinikk"))
+
 
 ## print tabell
 rowspec <- dim(tab02all)[1]
