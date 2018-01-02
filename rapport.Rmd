@@ -263,24 +263,27 @@ setkey(DataT02, Navn)
 ## names(ageT02)[names(ageT02) == "V1"] <- "Alder"
 ## ## ageTot <- DataT02[, mean(alder, na.rm = TRUE)] #total mean alder
 
-
+## Alder
 vb01 <- "ALDER"
-DataT02[, alder := get(vb01)]
-ageT02 <- DataT02[, list(Alder = mean(as.numeric(get(vb01)), na.rm = TRUE)), by = Navn]
+## DataT02[, alder := get(vb01)]
+setnames(DataT02, vb01, "alder")
+ageT02 <- DataT02[, list(Alder = mean(as.numeric(alder), na.rm = TRUE)), by = Navn]
 
 
-## Kjønn - andel per senter
+## Kjønn - andel per senter 0 = Kvinne
 vb03 <- grep("KJONN", colnames(DataT02))
 
 colnames(DataT02)[vb03] <- "kjonn"
-kjonnval <- c("Kvinne", "Mann")
-DataT02$kjonn <- factor(DataT02$kjonn,
-                        levels = c(0, 1),
-                        labels = kjonnval)
+## kjonnval <- c("Kvinne", "Mann")
+## DataT02$kjonn <- factor(DataT02$kjonn,
+##                         levels = c(0, 1),
+##                         labels = kjonnval)
+
 
 vb03mk <- DataT02[, .N, by = Navn] # antall per poliklinikk
-vb03k <- DataT02[kjonn == "Kvinne", .N, by = Navn] # antall kvinner
-names(vb03k)[2] <- "n"
+vb03k <- DataT02[kjonn == 0, .N, by = Navn] # antall kvinner
+## names(vb03k)[2] <- "n"
+setnames(vb03k, "N", "n")
 setkey(vb03mk, Navn)
 setkey(vb03k, Navn)
 kvinne <- vb03k[vb03mk]
