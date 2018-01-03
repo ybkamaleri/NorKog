@@ -551,6 +551,9 @@ diag.tab[, prop := N / diagN * 100] #beregn andel
 diag.tab[.(diag = 0:6, to = diagVal02), on = "diag", diagose := i.to]
 diag.tab[, prop := round(prop, digits = 1)]
 
+diag.tab[, txtfig := paste0(diagose, " (N=", N, ")")]
+
+## Tekst posisjon
 txtCut <- diag.tab[, max(prop)]
 diag.tab[, pos := ifelse(prop < 0.2 * txtCut, 0, 1)]
 
@@ -563,7 +566,7 @@ width = .80
 
 data.fig <- diag.tab
 
-ggplot(data.fig, aes(reorder(diagose, prop), prop, label = prop)) +
+ggplot(data.fig, aes(reorder(txtfig, prop), prop, label = prop)) +
   geom_bar(width = width, position = position, stat = "identity", fill = colb) +
   geom_text(data = data.fig[pos == 1], hjust = 1.3, size = 2.5) +
   geom_text(data = data.fig[pos == 0], hjust = -0.3, size = 2.5) +
