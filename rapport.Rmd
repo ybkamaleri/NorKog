@@ -13,7 +13,7 @@ rm(list = ls())
 ########################
 
 ## Hvilket år skal kombineres? - endres etter behov
-yearMix <- 2008:2014
+yearMix <- 2008:2011
 
 ## deling for tekst posisjon i bar figur 1
 deltxt <- 80
@@ -98,7 +98,7 @@ Data <- merge(RegData, senter, by.x = "SENTER", by.y = "Senter", all.x = TRUE)
 
 # Antall inkluderte per poliklinikk
 
-```{r fig01data, echo=FALSE, message=FALSE, warning=FALSE}
+```{r figAntall, echo=FALSE, message=FALSE, warning=FALSE}
 ## Antall pasienter per senter
 fig00Data <- Data[, .N, by = Navn]
 sn <- dim(senter)[1] #antall sentre
@@ -115,7 +115,7 @@ inkl <- Data[, length(unique(Navn))]
 
 Det er `r inkl` poliklinikker inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
 
-```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center', fig.height = 6}
 
 ## Legge til gjennomsnitt hele landet
 DTsnitt <- data.table(Navn = "Gjennomsnitt", N = NN / sn)
@@ -235,14 +235,7 @@ kable(tab02all, format = "latex", booktabs = TRUE) %>%
 
 \pagebreak
 
-
-# Demografiske variabler, gjennomsnitt per poliklinikk og missing
-
-Mangler [kodebok] for **Kjønn** og **Sivil status** i dokumentet.
-
-**OBS!** Alle senter med deltaker <20 er eksludert i alle analysene herfra. 
-
-```{r tab02data, echo=FALSE, message=FALSE, warning=FALSE}
+```{r demodata, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 
 ## eksludert senter med mindre enn 20
 valgSenter <- senN$Navn[senN$Total > 20] #vector Senter navn med deltaker >20
@@ -250,6 +243,15 @@ valgSenter <- senN$Navn[senN$Total > 20] #vector Senter navn med deltaker >20
 DataT02 <- Data[Navn %in% valgSenter, ]
 dataN <- dim(DataT02)[1]
 setkey(DataT02, Navn)
+
+```
+
+# Demografiske variabler, gjennomsnitt per poliklinikk og missing
+
+Poliklinikker med deltaker mindre enn 20 pasienter er eksludert i alle analysene
+herfra. Total pasienter som brukes i analysen er **`r dataN`**
+
+```{r tab02data, echo=FALSE, message=FALSE, warning=FALSE}
 
 #OBS! kan lage problem med norske bokstaver
 
@@ -425,9 +427,7 @@ kable(tab.all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 1, 1, 1, 1)
 
 ```
 
-Poliklinikker med deltaker mindre enn 20 er eksludert i analysen, dette utgjør at
-total pasienter som er inkludert i analysen her blir **`r dataN`** personer. I tillegg er
-missing data i relevante analysene eksludert. De er som følgende:
+Missing data i de respektive analysene er som følgende:
 
 ```{r tabMis, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -481,10 +481,9 @@ offPro[, pros := N / sum * 100, by = .(yr, get)][]
 
 ```                                           
 
-Andel motakker av offentlig hjelp. [*Jeg synes å presentere dataene som linje diagram belyser tydeligere tidstrend i dataene. Det er vanskeligere å se trend for de forskjellige kategoriene i stack diagram som foreslått*]
+Andel motakker av offentlig hjelp.
 
-
-```{r fig02, echo=FALSE, warning=FALSE, message=FALSE, fig.height=3.5, fig.width=6,fig.align='center'}
+```{r figOffentlig, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
 ##labelling
 fig_lab <- c("Nei", "Ja", "Ingen info")
 offPro$get <- factor(offPro$get, levels = c(0,1,99),labels = fig_lab )
@@ -524,9 +523,69 @@ grid.draw(gg.fig02T)
 
 ```
 
-# Gjennomsnitt alder, per senter per år
+# Diagnoser
 
-Her bør nok tenke om igjen hva vil dere fortelle i figuren. 
+```{r figDiagnose, echo=FALSE, warning=FALSE, message=FALSE, fig.aline='center'}
+
+v.diagnose <- "HOVEDDIAGNOSE"
+setnames(DataT02, v.diagnose, "diag") #rename til diag
+
+## diagnoser navn
+diagVal01 <- c("SCI", "MCI", "AD", "VaD", "DLB/PDD/FTD", "Uspesifisert demens", "Annen diagnose")
+
+diagVal02 <- c("Subjectiv kognitiv svikt",
+               "Mild kognitiv svikt",
+               "Demens av Alzheimerstype",
+               "Vaskulær Demens",
+               "DLB/PDD/FTD",
+               "Uspesifisert demens",
+               "Annen diagnose")
+
+n.diag <- DataT02[, .N, by = .(diag)][is.na(diag), diag := 9] #NA =9
+diagNA <- n.diag$N[n.diag$diag == 9] #antall missing
+
+
+diag.tab <- n.diag[diag != 9, ]
+diagN <- diag.tab[, sum(N)] #antall inkludert
+diag.tab[, prop := N / diagN * 100] #beregn andel
+diag.tab[.(diag = 0:6, to = diagVal02), on = "diag", diagose := i.to]
+diag.tab[, prop := round(prop, digits = 1)]
+
+txtCut <- diag.tab[, max(prop)]
+diag.tab[, pos := ifelse(prop < 0.2 * txtCut, 0, 1)]
+
+title <- "Diagnoser NorKog"
+sub.title <- paste0("N = ", diagN, ", Antall missing = ", diagNA)
+y.lab <- "Prosentvis andel"
+
+position = position_dodge(width = .80)
+width = .80
+
+data.fig <- diag.tab
+
+ggplot(data.fig, aes(reorder(diagose, prop), prop, label = prop)) +
+  geom_bar(width = width, position = position, stat = "identity", fill = colb) +
+  geom_text(data = data.fig[pos == 1], hjust = 1.3, size = 2.5) +
+  geom_text(data = data.fig[pos == 0], hjust = -0.3, size = 2.5) +
+  coord_flip() +
+  labs(title = title, subtitle = sub.title, y = y.lab, x = "") +
+  scale_y_continuous(expand = c(0, 0)) + 
+  theme(
+    plot.title = element_text(size = 10, color = "black"), 
+    plot.margin = unit(c(0,2,0.5,0.5), "cm"),
+    axis.text.y = element_text(size = 9, color = "black"),
+    axis.ticks.y = element_blank(),
+    axis.line.x = element_line(size = 0.5),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.title.y = element_text(size = 9),
+    axis.title.x = element_text(size = 9),
+    legend.position = "none")
+
+```
+
 
 
 
