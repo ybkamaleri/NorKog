@@ -248,9 +248,10 @@ Mangler [kodebok] for **Kjønn** og **Sivil status** i dokumentet.
 valgSenter <- senN$Navn[senN$Total > 20] #vector Senter navn med deltaker >20
 
 DataT02 <- Data[Navn %in% valgSenter, ]
+dataN <- dim(DataT02)[1]
 setkey(DataT02, Navn)
 
-#OBS! kan lage problem med norske bokstave
+#OBS! kan lage problem med norske bokstaver
 
 ## ## Alder beregn fra år hentes fra DATO_US
 ## ## rename FØDSELSÅ to "byear" 
@@ -264,197 +265,200 @@ setkey(DataT02, Navn)
 ## ## ageTot <- DataT02[, mean(alder, na.rm = TRUE)] #total mean alder
 
 ## Alder
-vb01 <- "ALDER"
-## DataT02[, alder := get(vb01)]
-setnames(DataT02, vb01, "alder")
-ageT02 <- DataT02[, list(Alder = mean(as.numeric(alder), na.rm = TRUE)), by = Navn]
+v.alder <- "ALDER"
+## DataT02[, alder := get(v.alder)]
+setnames(DataT02, v.alder, "alder")
+ageT02 <- DataT02[, list(alder = mean(as.numeric(alder), na.rm = TRUE)), by = Navn]
 
 
 ## Kjønn - andel per senter 0 = Kvinne
-vb03 <- grep("KJONN", colnames(DataT02))
+v.kjonn <- grep("KJONN", colnames(DataT02))
 
-colnames(DataT02)[vb03] <- "kjonn"
+colnames(DataT02)[v.kjonn] <- "kjonn"
 ## kjonnval <- c("Kvinne", "Mann")
 ## DataT02$kjonn <- factor(DataT02$kjonn,
 ##                         levels = c(0, 1),
 ##                         labels = kjonnval)
 
 
-vb03mk <- DataT02[, .N, by = Navn] # antall per poliklinikk
-vb03k <- DataT02[kjonn == 0, .N, by = Navn] # antall kvinner
-## names(vb03k)[2] <- "n"
-setnames(vb03k, "N", "n")
-setkey(vb03mk, Navn)
-setkey(vb03k, Navn)
-kvinne <- vb03k[vb03mk]
+v.kjonnmk <- DataT02[, .N, by = Navn] # antall per poliklinikk
+v.kjonnk <- DataT02[kjonn == 0, .N, by = Navn] # antall kvinner
+setnames(v.kjonnk, "N", "n")
+setkey(v.kjonnmk, Navn)
+setkey(v.kjonnk, Navn)
+kvinne <- v.kjonnk[v.kjonnmk]
 kvinne[, kvinne := n / N * 100, by = Navn]
-kvinneT03 <- kvinne[, c(1, 4)]
+kvinneT02 <- kvinne[, c(1, 4)]
 
 
 ## Sivil status
-sivil01 <- "SIVILSTA"
-setnames(DataT02, sivil01, "sivil") #gir nytt navn
+v.civil <- "SIVILSTA"
+setnames(DataT02, v.civil, "sivil") #gir nytt navn
 
 sivil02na <- DataT02[!is.na(sivil), .N, by = Navn]
 sivil02ja <- DataT02[sivil == 1, .N, by = Navn]
 setnames(sivil02ja, "N", "n")
-
 setkey(sivil02na, Navn)
 setkey(sivil02ja, Navn)
-
 sivil02per <- sivil02ja[sivil02na]
 sivil02per[, sivil := n / N * 100, by = Navn]
-sivil02all <- sivil02per[, c(1, 4)]
-
-
+sivilT02 <- sivil02per[, c(1, 4)]
 
 ## Utdannelse
 ## Bytt ÅR_SKOLE til "skoleyr"
-vb02 <- grep("SKOLEGANG", colnames(DataT02))#finne index for ÅR_SKOLE
-colnames(DataT02)[vb02] <- "skoleyr"
-DataT02[, skole := as.numeric(skoleyr)]
-skoT02 <- DataT02[, mean(skole, na.rm = TRUE), by = Navn]
-names(skoT02)[names(skoT02) == "V1"] <- "Utdannelse"
-## skoTot <- DataT02[, mean(skole, na.rm = TRUE)] #total utdannelse år
+v.utdanning <- grep("SKOLEGANG", colnames(DataT02))#finne index for ÅR_SKOLE
+colnames(DataT02)[v.utdanning] <- "skoleyr"
+DataT02[, skoleyr := as.numeric(skoleyr)]
+skoT02 <- DataT02[, list(edu = mean(skoleyr, na.rm = TRUE)), by = Navn]
+
 
 ## Offentlig hjelp NA remove
 ## Skal NA tatt bort eller bregn som nevner???
 ##proOffTab <- DataT02[order(OFF_HJEL), list(unique(OFF_HJEL), proHjel = tabulate(OFF_HJEL) / .N + 100), by = Navn]
-v04 <- "OFF_HJEL"
-v04na <- DataT02[!is.na(get(v04)), .N, by = Navn]
-v04ja <- DataT02[get(v04) == 1, .N, by = Navn]
-colnames(v04ja) <- c("Navn", "n")
-setkey(v04na, Navn)
-setkey(v04ja, Navn)
-offT02Tab <- v04na[v04ja]
+v.offhjelp <- "OFF_HJEL"
+v.offhjelpna <- DataT02[!is.na(get(v.offhjelp)), .N, by = Navn]
+v.offhjelpja <- DataT02[get(v.offhjelp) == 1, .N, by = Navn]
+colnames(v.offhjelpja) <- c("Navn", "n")
+setkey(v.offhjelpna, Navn)
+setkey(v.offhjelpja, Navn)
+offT02Tab <- v.offhjelpna[v.offhjelpja]
 offT02Tab[, off := n / N * 100, by = Navn]
 offT02 <- offT02Tab[, c(1, 4)]
 
-## offT02Tab <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v04)) / .N * 100), by = Navn]
-## offT02 <- offT02Tab[V1 == 1] #NA inkludert som nevner
-## offT02$V1 <- NULL
-## names(offT02)[names(offT02) == "V2"] <- "Offentlig"
-## ## total offentlig hjelp
-## offTotValue <- DataT02[order(get(v04)), list(unique(get(v04)), V2 = tabulate(get(v04)) / .N * 100)]
-## offTot <- offTotValue$V2[offTotValue$V1 == 1][1]
-
 ## Komparent NA remove
-v05 <- "KOMPAREN"
-v05na <- DataT02[!is.na(get(v05)), .N, by = Navn]
-v05ja <- DataT02[get(v05) == 1, .N, by = Navn]
-colnames(v05ja) <- c("Navn", "n")
-setkey(v05na, Navn)
-setkey(v05ja, Navn)
-komT02Tab <- v05na[v05ja]
+v.komparen <- "KOMPAREN"
+v.komparenna <- DataT02[!is.na(get(v.komparen)), .N, by = Navn]
+v.komparenja <- DataT02[get(v.komparen) == 1, .N, by = Navn]
+colnames(v.komparenja) <- c("Navn", "n")
+setkey(v.komparenna, Navn)
+setkey(v.komparenja, Navn)
+komT02Tab <- v.komparenna[v.komparenja]
 komT02Tab[, kom := n / N * 100, by = Navn]
 komT02 <- komT02Tab[, c(1, 4)]
 
+## kombinere alle tabellen
+listTab <- list(ageT02, skoT02, kvinneT02, sivilT02, offT02, komT02)
+tabell01 <- Reduce(function(x, y) x[y], listTab)
 
-## komT02Tab <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100), by = Navn]
-## komT02 <- komT02Tab[V1 == 1]
-## komT02$V1 <- NULL
-## names(komT02)[names(komT02) == "V2"] <- "Komparent"
-## ## total komparent
-## komTotValue <- DataT02[order(get(v05)), list(unique(get(v05)), V2 = tabulate(get(v05)) / .N * 100)]
-## komTot <- komTotValue$V2[komTotValue$V1 == 1][1]
+## Reorganisere tabellen
+tabell01 <- tabell01[, list(Navn, alder, kvinne, edu, sivil, off, kom)]
+
+col.name <- c("Senter", "age", "kjonn", "edu", "civil", "off", "kom")
+
+## bytte col names
+
+colnames(tabell01) <- col.name
+
 
 ##############
 ### TOTAL
 ##############
 
 ## Mean alder og utdannelse Total
-Tot01 <-  DataT02[, lapply(.SD, function(x) mean(x, na.rm = T)), .SDcol = c("alder", "skole")]
-
+tot01 <-  DataT02[, lapply(.SD, function(x) mean(x, na.rm = TRUE)), .SDcol = c("alder", "skoleyr")]
+setnames(tot01, "skoleyr", "edu")
 
 ## Andel kvinner
-totK <- DataT02[kjonn == "Kvinne", .N]
-totAlle <- dim(DataT02)[1]
-TotKvinner <- totK / totAlle * 100
+kvinneJa <- DataT02[kjonn == 0, .N]
+kvinneAll <- dim(DataT02)[1]
+kvinneTot <- kvinneJa / kvinneAll * 100
 
 ## Andel gift/samboer
-sivilNA <- DataT02[!is.na(sivil), .N]
-
-
-
+c.All <- DataT02[!is.na(sivil), .N]
+c.gift <- DataT02[sivil == 1, .N]
+giftTot <- c.gift / c.All * 100
 
 ## Andel svarte Ja OFF_HJEL eksludert NA
-offNA <- DataT02[!is.na(get(v04)), .N] #OFF_HJEL uten NA
-totOff <- DataT02[, lapply(.SD, function(x) tabulate(x) / offNA * 100), .SDcol = c(v04)] #uten NA OFF_HJEL
-
+offAlle <- DataT02[!is.na(get(v.offhjelp)), .N] #OFF_HJEL uten NA
+## totOff <- DataT02[, lapply(.SD, function(x) tabulate(x) / offNA * 100), .SDcol = c(v.offhjelp)] #uten NA OFF_HJEL
 ## enkle løsning
-off01 <- DataT02[get(v04) == 1, .N]
-totOff01 <- off01 / offNA * 100
+offJa <- DataT02[get(v.offhjelp) == 1, .N]
+offTot <- offJa / offAlle * 100
 
 ## Andel svarte Ja KOMPAREN eksludert NA
-komNA <- DataT02[!is.na(get(v05)), .N] #KOMPAREN uten NA
-totKom <- DataT02[, lapply(.SD, function(x) tabulate(x) / komNA * 100), .SDcol = c(v05)] #uten NA OFF_HJEL
+komAlle <- DataT02[!is.na(get(v.komparen)), .N] #KOMPAREN uten NA
+## totKom <- DataT02[, lapply(.SD, function(x) tabulate(x) / komNA * 100), .SDcol = c(v.komparen)] #uten NA OFF_HJEL
+komJa <- DataT02[get(v.komparen) == 1, .N]
+komTot <- komJa / komAlle * 100
 
-tot01 <- DataT02[get(v05) == 1, .N]
-totKom01 <- tot01 / komNA * 100
+## kobinere
+tot02 <- data.table(kvinne = kvinneTot, sivil = giftTot, off = offTot, kom = komTot)
 
-Tot022 <- data.table(off = totOff01, kom = totKom01)
+## ## Andel svarte Ja OFF_HJEL og KOMPAREN
+## Tot02na <- DataT02[, lapply(.SD, function(x) tabulate(x) / .N * 100), .SDcol = c(v.offhjelp, v.komparen) ] #inkludert NA
 
-Tot02 <- cbind(totOff, totKom)
+tabell02 <- cbind(tot01, tot02) #NA eksludert i Totallen
+tabell02$Navn <- "Total"
+## Reorganisere
+tabell02 <- tabell02[, list(Navn, alder, kvinne, edu, sivil, off, kom)]
 
+## bytt navn
+colnames(tabell02) <- col.name
 
-## Andel svarte Ja OFF_HJEL og KOMPAREN
-Tot02na <- DataT02[, lapply(.SD, function(x) tabulate(x) / .N * 100), .SDcol = c(v04, v05) ] #inkludert NA
-
-
-colTot <- c("age", "edu", "off", "kom")
-tab03tot <- cbind(Tot01, Tot02) #NA eksludert i Totallen
-colnames(tab03tot) <- colTot
-tab03tot$Senter <- "Total"
-
-## colTot <- colnames(tab03)
-## varN <- list(ageTot, skoTot, offTot, komTot)
-## valTot <- c("Total", ageTot, skoTot, offTot, komTot)
-## tabTot <- data.table(colTot, valTot)
-
-col3 <- c("Senter", "age", "edu", "off", "kom")
-
-listTab <- list(ageT02, skoT02, offT02, komT02)
-tab03 <- Reduce(function(x, y) x[y], listTab)
-
-## Endre col navn
-colnames(tab03) <- col3
-
-### Missing
-missTab <- DataT02[, lapply(.SD, function(x) sum(is.na(x))), .SDcols = c("alder", "skole", v04, v05)]
-colnames(missTab) <- colTot
-missTab$Senter <- "Missing"
-
+#######################
+## Klargjøre tabellen
+######################
 ## Kombinere tabell med colnames data.table::rbindlist
-tab03all <- rbindlist(list(tab03, tab03tot), fill = TRUE)
-## Kombinere tabell missing
-tab03allmiss <- rbindlist(list(tab03all, missTab), fill = TRUE)
-lineMiss <- dim(tab03allmiss)[1]
-tab03miss <- tab03allmiss[lineMiss, ]
-colMiss <- c("Data", "Alder", "Utdannelse", "Oftenlig Hjelp", "Komparent")
-colnames(tab03miss) <- colMiss
+## kobinere med total
+tab.all <- rbindlist(list(tabell01, tabell02), fill = TRUE)
 
 ## Naming table
-colAll <- c("Senter", "År, mean", "År, mean", "Ja, %", "Ja, %")
-colnames(tab03all) <- colAll
+colAll <- c("Senter","År, mean", "Kvinne, %", "År, mean", "Gift/samboer, %", "Ja, %", "Ja, %")
+colnames(tab.all) <- colAll
 
 ## siste linje til bold i pdf output
-lastLine <- dim(tab03all)[1]
+lastLine <- dim(tab.all)[1]
 
 
-kable(tab03all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 0, 0)) %>%
+kable(tab.all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 1, 1, 1, 1)) %>%
   kable_styling(latex_options = c("hold_position")) %>%
   row_spec(lastLine, bold = TRUE) %>%
-  add_header_above(c("", "Alder" = 1, "Utdannelse" = 1, "Offentlig Hjelp" = 1,
+  add_header_above(c("",
+                     "Alder" = 1,
+                     "Kjønn" = 1,
+                     "Utdannelse" = 1,
+                     "Sivil status" = 1,
+                     "Offentlig Hjelp" = 1,
                      "Komparent" = 1))
 
 ## knitr::kable(tab03all) 
 
 ```
 
-Alle missing er eksludert i analysen. De er som følgende:
+Poliklinikker med deltaker mindre enn 20 er eksludert i analysen, dette utgjør at
+total pasienter som er inkludert i analysen her blir **`r dataN`** personer. I tillegg er
+missing data i relevante analysene eksludert. De er som følgende:
 
 ```{r tabMis, echo=FALSE, warning=FALSE, message=FALSE}
-kable(tab03miss, booktabs = TRUE)
+
+#################
+### Missing
+################
+tabellNA <- DataT02[, lapply(.SD, function(x) sum(is.na(x))), .SDcols = c("alder", "kjonn", "skoleyr", "sivil", v.offhjelp, v.komparen)]
+## rename
+setnames(tabellNA, c("kjonn", "skoleyr", "OFF_HJEL", "KOMPAREN"), c("kvinne", "edu", "off", "kom"))
+tabellNA$Navn <- "Missing"
+
+##reorganisere
+tabellNA <- tabellNA[, list(Navn, alder, kvinne, edu, sivil, off, kom)]
+colnames(tabellNA) <- c("", "Alder", "Kjønn", "Utdannelse", "Sivil status", "Offentlig Hjelp", "Komparent")
+
+
+## Kobinere missing
+tab.allm <- rbindlist(list(tab.all, tabellNA), fill = TRUE)
+
+## ## Kombinere tabell med colnames data.table::rbindlist
+## tab03all <- rbindlist(list(tab03, tab03tot), fill = TRUE)
+## ## Kombinere tabell missing
+## tab03allmiss <- rbindlist(list(tab03all, missTab), fill = TRUE)
+## lineMiss <- dim(tab03allmiss)[1]
+## tab03miss <- tab03allmiss[lineMiss, ]
+## colMiss <- c("Data", "Alder", "Utdannelse", "Oftenlig Hjelp", "Komparent")
+## colnames(tab03miss) <- colMiss
+
+
+kable(tabellNA, booktabs = TRUE) %>%
+  kable_styling(full_width = TRUE)
 
 ```
 
@@ -466,7 +470,7 @@ kable(tab03miss, booktabs = TRUE)
 ```{r fig02data, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}    
 
 ## Dataset med senter mer enn 20 (>20)
-offPro <- DataT02[, .N, by = .(yr, get(v04))]
+offPro <- DataT02[, .N, by = .(yr, get(v.offhjelp))]
 bNA(offPro, 99)
 
 offPro <- offPro[yr != 99]
