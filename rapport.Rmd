@@ -649,7 +649,49 @@ kable(s.diag, format = "latex", booktabs = TRUE) %>%
 
 ```
 
+# Demens og MCI, per senter per år
 
+```{r mci, echo=FALSE, message=FALSE, warning=FALSE}
+
+## Kombi år er fra disse omkodet variablene
+##  yearMix - viser hvilket år er kobineres
+##  yr2 - i databasen med tallet 1000
+##  yrtab - for navn i tabell eller figur
+
+## Variable å bruke
+
+mci <- quote(MCI)
+demens <- quote(DEMENS)
+
+## DataT02[, (dem) := as.numeric(get(dem))]
+## DataT02[, (mci) := as.numeric(get(mci))]
+
+## Demens
+n.demens <- DataT02[, .N, by = list(SENTER, eval(demens), yr2)]
+n.demens[, demens := NULL]
+n.demens[, prop := N / sum(N)*100, by = list(SENTER, yr2)]
+n.demens[, type := 1] # demens = 1
+
+## MCI
+n.mci <- DataT02[, .N, by = list(SENTER, eval(mci), yr2)]
+n.mci[, mci := NULL]
+n.mci[, prop := N / sum(N)*100, by = list(SENTER, yr2)]
+n.mci[, type := 2] # mci = 2
+
+mix.dm <- merge(n.demens, n.mci, all = TRUE)
+
+tab.mix <- senter[mix.dm, on = c(Senter = "SENTER")]
+
+### Funker ikke!!!
+tab.all <- dcast(tab.mix, Navn + type ~ yr2, value.var = "prop")
+
+mci.names <- data.table(kode = 1:2, name = c("Demensdiagnose", "MCI"))
+
+mci.names[tab.all, on = c(kode = "type")]
+
+
+
+```
 
 
 
