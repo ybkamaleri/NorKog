@@ -532,6 +532,8 @@ setnames(DataT02, v.diagnose, "diag") #rename til diag
 
 ## diagnoser navn
 diagVal01 <- c("SCI", "MCI", "AD", "VaD", "DLB/PDD/FTD", "Uspesifisert demens", "Annen diagnose")
+diagTabell <- data.table(kode = 0:6, diagnose = diagVal01)
+setkey(diagTabell, kode)
 
 diagVal02 <- c("Subjectiv kognitiv svikt",
                "Mild kognitiv svikt",
@@ -540,6 +542,8 @@ diagVal02 <- c("Subjectiv kognitiv svikt",
                "DLB/PDD/FTD",
                "Uspesifisert demens",
                "Annen diagnose")
+diagTabell01 <- data.table(kode = 0:6, diagnose = diagVal02)
+setkey(diagTabell01, kode)
 
 n.diag <- DataT02[, .N, by = .(diag)][is.na(diag), diag := 9] #NA =9
 diagNA <- n.diag$N[n.diag$diag == 9] #antall missing
@@ -548,10 +552,10 @@ diagNA <- n.diag$N[n.diag$diag == 9] #antall missing
 diag.tab <- n.diag[diag != 9, ]
 diagN <- diag.tab[, sum(N)] #antall inkludert
 diag.tab[, prop := N / diagN * 100] #beregn andel
-diag.tab[.(diag = 0:6, to = diagVal02), on = "diag", diagose := i.to]
+diag.tab[.(diag = 0:6, to = diagVal02), on = "diag", diagnose := i.to]
 diag.tab[, prop := round(prop, digits = 1)]
 
-diag.tab[, txtfig := paste0(diagose, " (N=", N, ")")]
+diag.tab[, txtfig := paste0(diagnose, " (N=", N, ")")]
 
 ## Tekst posisjon
 txtCut <- diag.tab[, max(prop)]
@@ -588,8 +592,62 @@ ggplot(data.fig, aes(reorder(txtfig, prop), prop, label = prop)) +
     legend.position = "none")
 
 ```
+\pagebreak
+
+# Diagnoser per senter 
 
 
+```{r diagsenter, echo=FALSE, warning=FALSE, message=FALSE}
+
+## variable HOVEDDIAGNOSE brukes med allered byttet til "diag" fra forrige analysen
+n.diag <- DataT02[!is.na(diag), .N, by = list(SENTER, diag)]
+n.diag[, `:=` (diag = as.numeric(diag), N = as.numeric(N))]
+n.diag[!is.na(diag), prop := round(N / sum(N) * 100, digits = 1), by = list(SENTER)]
+
+setkey(n.diag, SENTER)
+## key(senter) - sjekke hvilken key
+
+## gir senter navn
+t.diag <- senter[n.diag] #right outer join
+
+t.diag <- diagTabell[t.diag, on = c(kode = "diag")]
+
+## konvertere til wide
+s.diag <- dcast(t.diag, Navn ~ diagnose, value.var = "prop")
+
+## bytt missing med 0
+bNA(s.diag)
+
+## tar bort kollone som ikke trenges
+del.col <- "Annen diagnose"
+s.diag <- s.diag[, (del.col) := NULL]
+
+## reorganisere kollone
+diag.colorder <- c("Navn", 
+                   "AD",
+                   "SCI",
+                   "MCI",
+                   "VaD",
+                   "Uspesifisert demens",
+                   "DLB/PDD/FTD")
+
+setcolorder(s.diag, diag.colorder)
+
+## diag.names <-  c("Navn", 
+##                  "AD",
+##                  "SCI",
+##                  "MCI",
+##                  "VaD",
+##                  "Uspesifisert\n demens",
+##                  "DLB/PDD/FTD")
+
+##setnames(s.diag, "Uspesifisert demens", "Uspesifisert\n demens")
+
+kable(s.diag, format = "latex", booktabs = TRUE) %>%
+  kable_styling() %>%
+  add_header_above(c("", "Andel per diagnoser typer (%)" = 6))
+
+```
 
 
 
