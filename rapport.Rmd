@@ -92,7 +92,8 @@ senter <- data.table::fread(sentfil, header = TRUE, encoding = "Latin-1")
 setkey(senter, Senter) #key er senter kode
 
 ## Slå sammen senternavn og dataset
-Data <- merge(RegData, senter, by.x = "SENTER", by.y = "Senter", all.x = TRUE)
+## Data <- merge(RegData, senter, by.x = "SENTER", by.y = "Senter", all.x = TRUE)
+Data <- senter[RegData] #gir navn til SENTER basert på senter listen
 
 ```
 
@@ -101,15 +102,15 @@ Data <- merge(RegData, senter, by.x = "SENTER", by.y = "Senter", all.x = TRUE)
 ```{r figAntall, echo=FALSE, message=FALSE, warning=FALSE}
 ## Antall pasienter per senter
 fig00Data <- Data[, .N, by = Navn]
-sn <- dim(senter)[1] #antall sentre
-NN <- dim(RegData)[1] #antall pasienter 
+sn <- dim(senter)[1] #antall sentre fra senter listen
+NN <- dim(RegData)[1] #antall pasienter fra datasettet
 
 ## Merge
 missn <- fig00Data[is.na(N), .N] #antall senter med misssing data
-fig01Data <- fig00Data[is.na(N), N := 0] #missing til 0
+fig01Data <- fig00Data[is.na(N), N := 0] #rekode NA til 0
 
 inkn <- sn - missn #antall senter uten missing data
-inkl <- Data[, length(unique(Navn))]
+inkl <- Data[, length(unique(Navn))] #antall senter i datasettet
 
 ```
 
@@ -182,9 +183,10 @@ yrmix <- yearMix #slå sammen disse årstallene
 yrtab <- paste0(min(yearMix),"-", max(yearMix)) #tekst til tabell
 Data[, yr2 := ifelse(yr %in% yrmix, 1000, yr)] #dummy for 2008:2012 er 1000
 
-## Dataset uten NA i DATO_US
-Datayr <- Data[, .SD[!is.na(yr)]] #exclude DATO_US == NA
-
+library(microbenchmark)
+## Dataset uten NA i US_AARSTALL
+## Datayr <- Data[, .SD[!is.na(yr)]], #exclude US_AARSTALL == NA
+Datayr <- Data[!is.na(yr), ]
 ```
 
 Det er `r yrNA` missing data i **US_AARSTALL**. Derfor antallet er ikke lik som i forrige figur
@@ -193,8 +195,10 @@ Det er `r yrNA` missing data i **US_AARSTALL**. Derfor antallet er ikke lik som 
 
 ## Antall per senter per år
 senNyrNA <- Datayr[, .N, by = .(Navn, yr2)]
+
 ## names(senNyrNA)[names(senNyrNA) == "N"] <- "n"
 setnames(senNyrNA, "N", "n")
+
 ## kovertere til wide
 senNyr1 <- dcast(senNyrNA, Navn ~ yr2, value.var = "n")
 
@@ -237,8 +241,10 @@ kable(tab02all, format = "latex", booktabs = TRUE) %>%
 
 ```{r demodata, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 
+
 ## eksludert senter med mindre enn 20
 valgSenter <- senN$Navn[senN$Total > 20] #vector Senter navn med deltaker >20
+
 
 DataT02 <- Data[Navn %in% valgSenter, ]
 dataN <- dim(DataT02)[1]
@@ -246,7 +252,8 @@ setkey(DataT02, Navn)
 
 ```
 
-# Demografiske variabler, gjennomsnitt per poliklinikk og missing
+
+# Demografiskef variabler, gjennomsnitt per poliklinikk og missing
 
 Poliklinikker med deltaker mindre enn 20 pasienter er eksludert i alle analysene
 herfra. Total pasienter som brukes i analysen er **`r dataN`**
@@ -600,11 +607,11 @@ ggplot(data.fig, aes(reorder(txtfig, prop), prop, label = prop)) +
 ```{r diagsenter, echo=FALSE, warning=FALSE, message=FALSE}
 
 ## variable HOVEDDIAGNOSE brukes med allered byttet til "diag" fra forrige analysen
-n.diag <- DataT02[!is.na(diag), .N, by = list(SENTER, diag)]
+n.diag <- DataT02[!is.na(diag), .N, by = list(Senter, diag)]
 n.diag[, `:=` (diag = as.numeric(diag), N = as.numeric(N))]
-n.diag[!is.na(diag), prop := round(N / sum(N) * 100, digits = 1), by = list(SENTER)]
+n.diag[!is.na(diag), prop := round(N / sum(N) * 100, digits = 1), by = list(Senter)]
 
-setkey(n.diag, SENTER)
+setkey(n.diag, Senter)
 ## key(senter) - sjekke hvilken key
 
 ## gir senter navn
@@ -663,33 +670,82 @@ kable(s.diag, format = "latex", booktabs = TRUE) %>%
 mci <- quote(MCI)
 demens <- quote(DEMENS)
 
-## DataT02[, (dem) := as.numeric(get(dem))]
-## DataT02[, (mci) := as.numeric(get(mci))]
 
+##################
 ## Demens
-n.demens <- DataT02[, .N, by = list(SENTER, eval(demens), yr2)]
-n.demens[, demens := NULL]
-n.demens[, prop := N / sum(N)*100, by = list(SENTER, yr2)]
-n.demens[, type := 1] # demens = 1
+#################
+demN <- DataT02[!is.na(eval(demens)), .N] #Antall svarte demens uten missing
+demData <- DataT02[!is.na(eval(demens)),] #Eksludert med NA for demens spørsmål
+n.demens <- demData[, .N, by = list(Senter, eval(demens), yr2)]
 
+n.demens[, prop := N / sum(N)*100, by = list(Senter, yr2)]
+tabell.dem <- n.demens[demens == 1, ] #slett uten demens ie. demens == 0
+
+## slett kolloner
+dem.remove <- c("demens", "N")
+tabell.dem[, (dem.remove) := NULL]
+
+## slett rows yr2 med NA
+tabell.dem <- tabell.dem[!is.na(yr2), ]
+
+## Gir senter navn
+tabell.dem2 <- senter[tabell.dem, on = c(Senter = "Senter")]
+tabell.dem3 <- dcast(tabell.dem2, Navn ~ yr2, value.var = "prop")
+
+## bytt NA til 0
+bNA(tabell.dem3)
+
+## Gir diagnose DEMENS == 1
+tabell.dem3[, diagnose := 1]
+
+###########
 ## MCI
-n.mci <- DataT02[, .N, by = list(SENTER, eval(mci), yr2)]
-n.mci[, mci := NULL]
-n.mci[, prop := N / sum(N)*100, by = list(SENTER, yr2)]
-n.mci[, type := 2] # mci = 2
+###########
+mciN <- DataT02[!is.na(eval(mci)), .N] #Antall svarte mci uten missing
+mciData <- DataT02[!is.na(eval(mci)),] #Eksludert med NA for mci spørsmål
+n.mci <- mciData[, .N, by = list(Senter, eval(mci), yr2)]
 
-mix.dm <- merge(n.demens, n.mci, all = TRUE)
+n.mci[, prop := N / sum(N)*100, by = list(Senter, yr2)]
+tabell.mci <- n.mci[mci == 1, ] #slett uten mci ie. mci == 0
 
-tab.mix <- senter[mix.dm, on = c(Senter = "SENTER")]
+## slett kolloner
+mci.remove <- c("mci", "N")
+tabell.mci[, (mci.remove) := NULL]
 
-### Funker ikke!!!
-tab.all <- dcast(tab.mix, Navn + type ~ yr2, value.var = "prop")
+## slett rows yr2 med NA
+tabell.mci <- tabell.mci[!is.na(yr2), ]
 
-mci.names <- data.table(kode = 1:2, name = c("Demensdiagnose", "MCI"))
+## Gir senter navn
+tabell.mci2 <- senter[tabell.mci, on = c(Senter = "Senter")]
+tabell.mci3 <- dcast(tabell.mci2, Navn ~ yr2, value.var = "prop")
 
-mci.names[tab.all, on = c(kode = "type")]
+## bytt NA til 0
+bNA(tabell.mci3)
 
+## Gir diagnose MCI == 2
+tabell.mci3[, diagnose := 2]
 
+########################
+## Merge demens og MCI
+#######################
+
+tabell.md <- rbindlist(list(tabell.dem3, tabell.mci3))
+
+## tabell for diagnose navn
+diagname <- data.table(kode = 1:2, diagnose = c("Demensdiagnose", "MCI"))
+
+tabell.md <- diagname[tabell.md, on = c(kode = "diagnose")]
+tabell.md[, kode := NULL]
+s
+tabell.md[, c("Navn", "diagnose")]
+
+## reorganisere Navn og diagnose
+neworder <- c("Navn", "diagnose")
+setcolorder(tabell.md, c(neworder, setdiff(names(tabell.md), neworder)))
+s
+setkey(tabell.md, Navn, diagnose)
+
+kable(tabell.md, format = "latex", booktabs = T)
 
 ```
 
