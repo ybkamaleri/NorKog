@@ -735,17 +735,22 @@ tabell.md <- rbindlist(list(tabell.dem3, tabell.mci3))
 diagname <- data.table(kode = 1:2, diagnose = c("Demensdiagnose", "MCI"))
 
 tabell.md <- diagname[tabell.md, on = c(kode = "diagnose")]
-tabell.md[, kode := NULL]
-s
-tabell.md[, c("Navn", "diagnose")]
+tabell.md <- tabell.md[, kode := NULL]
 
 ## reorganisere Navn og diagnose
 neworder <- c("Navn", "diagnose")
 setcolorder(tabell.md, c(neworder, setdiff(names(tabell.md), neworder)))
-s
-setkey(tabell.md, Navn, diagnose)
 
-kable(tabell.md, format = "latex", booktabs = T)
+setnames(tabell.md, c("Navn", 1000), c("Poliklinikker", yrtab))
+setkey(tabell.md, Poliklinikker, diagnose)
+
+library(pander)
+panderOptions("digits", 1)
+pander(tabell.md)
+
+## kable(tabell.md, format = "latex", booktabs = T, caption = "Longtable") %>%
+##   column_spec(1, bold = TRUE) %>%
+##   kable_styling(latex_options = c("striped", "scale_down"))
 
 ```
 
