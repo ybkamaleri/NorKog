@@ -29,6 +29,12 @@ microbenchmark(
 )
 
 
+## Delete rows NA
+DT2 <- copy(DT)
+DT2[2, "v3"] <- NA
+test <- DT2[!is.na(v3), ]
+test
+
 eato <- function(data, select = NULL, from, by, stat = c("sum", "mean")) {
 
   stat <- match.arg(stat)
