@@ -168,7 +168,6 @@ ggplot(innText, aes(reorder(Navn, N), N, label = N)) +
 
 \pagebreak
 
-
 # Antall inkluderte per poliklinikk per år
 
 ```{r tab01data, echo=FALSE, message=FALSE, warning=FALSE}
@@ -241,9 +240,11 @@ setnames(tab02all, c(1000, "Navn"), c(yrtab, "Poliklinikk"))
 
 ## print tabell
 rowspec <- dim(tab02all)[1]
+colspec <- dim(tab02all)[2]
 kable(tab02all, format = "latex", booktabs = TRUE) %>%
   kable_styling(latex_options = c("repeat_header", "hold_position")) %>%
-  row_spec(rowspec, bold = TRUE) 
+  row_spec(rowspec, bold = TRUE) %>%
+  column_spec(colspec, bold = TRUE)
 
 ## knitr::kable(tab02all)
 
@@ -265,7 +266,7 @@ setkey(DataT02, Navn)
 ```
 
 
-# Demografiskef variabler, gjennomsnitt per poliklinikk og missing
+# Demografiske variabler, gjennomsnitt per poliklinikk og missing
 
 Poliklinikker med deltaker mindre enn 20 pasienter er eksludert i alle analysene
 herfra. Total pasienter som brukes i analysen er **`r dataN`**
@@ -761,8 +762,8 @@ setkey(tabell.md, Poliklinikker, diagnose)
 ## panderOptions("digits", 1)
 ## pander(tabell.md)
 
-kable(tabell.md, format = "latex", booktabs = TRUE) %>%
-  kable_styling(latex_options = c("repeat_header", "scale_down")) %>%
+kable(tabell.md, format = "latex", longtable = TRUE, booktabs = TRUE) %>%
+  kable_styling(latex_options = c("repeat_header"), repeat_header_text = c("\\textit{(fortsettelsen)}")) %>%
   column_spec(1, bold=T) %>%
   collapse_rows(columns = 1)
 
