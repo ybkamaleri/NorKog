@@ -241,8 +241,9 @@ setnames(tab02all, c(1000, "Navn"), c(yrtab, "Poliklinikk"))
 ## print tabell
 rowspec <- dim(tab02all)[1]
 colspec <- dim(tab02all)[2]
+
 kable(tab02all, format = "latex", booktabs = TRUE) %>%
-  kable_styling(latex_options = c("repeat_header", "hold_position")) %>%
+  kable_styling(latex_options = c("repeat_header", "striped", "hold_position")) %>%
   row_spec(rowspec, bold = TRUE) %>%
   column_spec(colspec, bold = TRUE)
 
@@ -433,7 +434,7 @@ lastLine <- dim(tab.all)[1]
 
 
 kable(tab.all, format = "latex", booktabs = TRUE, digits = c(0,1, 1, 1, 1, 1, 1)) %>%
-  kable_styling(latex_options = c("hold_position")) %>%
+  kable_styling(latex_options = c("hold_position", "striped")) %>%
   row_spec(lastLine, bold = TRUE) %>%
   add_header_above(c("",
                      "Alder" = 1,
@@ -664,7 +665,7 @@ setcolorder(s.diag, diag.colorder)
 ##setnames(s.diag, "Uspesifisert demens", "Uspesifisert\n demens")
 
 kable(s.diag, format = "latex", booktabs = TRUE) %>%
-  kable_styling() %>%
+  kable_styling(latex_options = c("striped")) %>%
   add_header_above(c("", "Andel per diagnoser typer (%)" = 6))
 
 ```
@@ -761,10 +762,12 @@ setkey(tabell.md, Poliklinikker, diagnose)
 ## library(pander)
 ## panderOptions("digits", 1)
 ## pander(tabell.md)
+colnr <- dim(tabell.md)[2] - 2
 
 kable(tabell.md, format = "latex", longtable = TRUE, booktabs = TRUE) %>%
   kable_styling(latex_options = c("repeat_header"), repeat_header_text = c("\\textit{(fortsettelsen)}")) %>%
-  column_spec(1, bold=T) %>%
+  add_header_above(c("", "", "Andel per diagnoser (%)" = colnr)) %>%
+  column_spec(1, bold=T) %>%  
   collapse_rows(columns = 1)
 
 ## landscape()
