@@ -109,7 +109,7 @@ Data <- senter[RegData] #gir navn til SENTER basert på senter listen
 
 ```
 
-# Antall inkluderte per poliklinikk
+# Antall inkluderte per senter
 
 ```{r figAntall, echo=FALSE, message=FALSE, warning=FALSE}
 ## Antall pasienter per senter
@@ -126,7 +126,7 @@ inkl <- Data[, length(unique(Navn))] #antall senter i datasettet
 
 ```
 
-Det er `r inkl` poliklinikker inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
+Det er `r inkl` sentre inkludert i analysen. [*Her kan det ligge mer tekst om det er ønkelig*]
 
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center', fig.height = 6}
 
@@ -168,7 +168,7 @@ ggplot(innText, aes(reorder(Navn, N), N, label = N)) +
 
 \pagebreak
 
-# Antall inkluderte per poliklinikk per år
+# Antall inkluderte per senter per år
 
 ```{r tab01data, echo=FALSE, message=FALSE, warning=FALSE}
 ## ## Fra først data sett
@@ -235,7 +235,7 @@ yearN1$Total <- dim(Datayr)[1]
 tab02all <- rbind(tab02, yearN1)
 ## names(tab02all)[names(tab02all) == 1000] <- yrtab #gi col navn
 ## names(tab02all)[names(tab02all) == "Navn"] <- "Poliklinikk" #col navn Senter
-setnames(tab02all, c(1000, "Navn"), c(yrtab, "Poliklinikk"))
+setnames(tab02all, c(1000, "Navn"), c(yrtab, "Senter"))
 
 
 ## print tabell
@@ -267,9 +267,9 @@ setkey(DataT02, Navn)
 ```
 
 
-# Demografiske variabler, gjennomsnitt per poliklinikk og missing
+# Demografiske variabler, gjennomsnitt per senter og missing
 
-Poliklinikker med deltaker mindre enn 20 pasienter er eksludert i alle analysene
+Sentre med deltaker mindre enn 20 pasienter er eksludert i alle analysene
 herfra. Total pasienter som brukes i analysen er **`r dataN`**
 
 ```{r tab02data, echo=FALSE, message=FALSE, warning=FALSE}
@@ -619,32 +619,45 @@ ggplot(data.fig, aes(reorder(txtfig, prop), prop, label = prop)) +
 
 
 ```{r diagsenter, echo=FALSE, warning=FALSE, message=FALSE}
+## Antall per senter med diagnose uten missing
+v.diag <- DataT02[!is.na(diag), list(n1 = .N), by = list(Senter)]
+v.diag[, N := paste0("(", n1, ")")]
+v.diag[, n1 := NULL]
+setkey(v.diag, Senter)
 
-## variable HOVEDDIAGNOSE brukes med allered byttet til "diag" fra forrige analysen
+## variable HOVEDDIAGNOSE brukes som allerede byttet navn til "diag" fra forrige analysen
 n.diag <- DataT02[!is.na(diag), .N, by = list(Senter, diag)]
 n.diag[, `:=` (diag = as.numeric(diag), N = as.numeric(N))]
 n.diag[!is.na(diag), prop := round(N / sum(N) * 100, digits = 1), by = list(Senter)]
+setnames(n.diag, "N", "n")
 
 setkey(n.diag, Senter)
 ## key(senter) - sjekke hvilken key
 
-## gir senter navn
-t.diag <- senter[n.diag] #right outer join
-
-t.diag <- diagTabell[t.diag, on = c(kode = "diag")]
+## gir navn til diagnose fra "diagTabell"
+n.diag <- diagTabell[n.diag, on = c(kode = "diag")]
 
 ## konvertere til wide
-s.diag <- dcast(t.diag, Navn ~ diagnose, value.var = "prop")
+t.diag <- dcast(n.diag, Senter ~ diagnose, value.var = "prop")
 
 ## bytt missing med 0
-bNA(s.diag)
+bNA(t.diag)
+
+## legge N kolone
+t.diag <- v.diag[t.diag, on = c(Senter = "Senter")]
+
+
+
+## gir senter navn
+s.diag <- senter[t.diag] #right outer join
+
 
 ## tar bort kollone som ikke trenges
-del.col <- "Annen diagnose"
+del.col <- c("Senter", "Annen diagnose")
 s.diag <- s.diag[, (del.col) := NULL]
 
 ## reorganisere kollone
-diag.colorder <- c("Navn", 
+diag.colorder <- c("Navn", "N", 
                    "AD",
                    "SCI",
                    "MCI",
@@ -653,6 +666,9 @@ diag.colorder <- c("Navn",
                    "DLB/PDD/FTD")
 
 setcolorder(s.diag, diag.colorder)
+
+## Nytt colnavn - Navn til Senter
+setnames(s.diag, "Navn", "Senter")
 
 ## diag.names <-  c("Navn", 
 ##                  "AD",
@@ -666,7 +682,8 @@ setcolorder(s.diag, diag.colorder)
 
 kable(s.diag, format = "latex", booktabs = TRUE) %>%
   kable_styling(latex_options = c("striped")) %>%
-  add_header_above(c("", "Andel per diagnoser typer (%)" = 6))
+  column_spec(1, bold=T) %>% 
+  add_header_above(c("" , "", "Andel per diagnoser typer (%)" = 6))
 
 ```
 \pagebreak
@@ -756,8 +773,9 @@ tabell.md <- tabell.md[, kode := NULL]
 neworder <- c("Navn", "diagnose")
 setcolorder(tabell.md, c(neworder, setdiff(names(tabell.md), neworder)))
 
-setnames(tabell.md, c("Navn", 1000), c("Poliklinikker", yrtab))
-setkey(tabell.md, Poliklinikker, diagnose)
+## nytt colnavn
+setnames(tabell.md, c("Navn", 1000), c("Senter", yrtab))
+setkey(tabell.md, Senter, diagnose)
 
 ## library(pander)
 ## panderOptions("digits", 1)
