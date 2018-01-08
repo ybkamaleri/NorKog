@@ -27,7 +27,8 @@ rm(list = ls())
 ## Hvilket år skal kombineres? - endres etter behov
 yearMix <- 2008:2012
 
-## deling for tekst posisjon i bar figur 1
+## Tekst posisjon inne eller utenfor bar i figur 1
+## hvor deling skal gjøres? 
 deltxt <- 80
 
 
