@@ -1,3 +1,23 @@
+%%===========================%%
+%% Valg dynamiske variablene %%
+%%===========================%%
+<<var-valg, include=FALSE, echo=FALSE, cache=FALSE>>=
+
+rm(list = ls())
+
+########################
+## Valgfrie variabler ##
+########################
+
+## Hvilket år skal kombineres? - endres etter behov
+yearMix <- 2008:2012
+
+## Tekst posisjon inne eller utenfor bar i figur 1
+## hvor deling skal gjøres?
+deltxt <- 30
+@
+
+
 \documentclass{article}
 
 %% kableExtra packages
@@ -33,18 +53,6 @@
 \maketitle
 
 <<setup, include=FALSE>>=
-rm(list = ls())
-
-########################
-## Valgfrie variabler ##
-########################
-
-## Hvilket år skal kombineres? - endres etter behov
-yearMix <- 2008:2012
-
-## Tekst posisjon inne eller utenfor bar i figur 1
-## hvor deling skal gjøres?
-deltxt <- 80
 
 #######
 ## Hente sti
@@ -116,7 +124,7 @@ setkey(RegData, SENTER)
 ################
 ## Lister av navn for sentrene
 sentfil <- paste0(filDir, "/doc/senter.csv")
-senter <- data.table::fread(sentfil, header = TRUE, encoding = "UTF-8")
+senter <- data.table::fread(sentfil, header = TRUE, encoding = "Latin-1")
 setkey(senter, Senter) #key er senter kode
 
 ## Slå sammen senternavn og dataset
