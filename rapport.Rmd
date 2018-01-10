@@ -39,6 +39,11 @@ deltxt <- 80
 
 ```{r file, echo=FALSE, warnings=FALSE, include=FALSE, message=FALSE}
 
+#######
+## Hente sti
+filDir <- getwd()
+
+
 ## henter pakker eller installere om ikke finnes
 inspak <- function(pkg){
   nypkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
@@ -61,7 +66,7 @@ library(haven) #for å lese .sav fil
 ############
 ############
 ## DATA
-filDir <- getwd()
+
 sr01 <- paste0(filDir,"/", "datakilder1.R")
 sr02 <- paste0(filDir, "/", "datakilder2.R")
 ##ifelse(file.exists(sr01), source(sr01), source(sr02))
@@ -132,7 +137,7 @@ Det er `r inkl` sentre inkludert i analysen. [*Her kan det ligge mer tekst om de
 ```{r fig01, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center', fig.height = 6}
 
 ## Legge til gjennomsnitt hele landet
-DTsnitt <- data.table(Navn = "Gjennomsnitt", N = NN / sn)
+DTsnitt <- data.table(Navn = "Gjennomsnitt", N = round(NN / sn, digits = 0))
 fig02Data <- rbindlist(list(fig01Data, DTsnitt)) #kombinere gjennomsnitt til datasett
 
 innText <- fig02Data[, pos := ifelse(N < deltxt, 0, 1)]

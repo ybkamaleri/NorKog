@@ -7,3 +7,8 @@
 /test/ggplot.R
 figures/  
 /*.html
+*.tex
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
