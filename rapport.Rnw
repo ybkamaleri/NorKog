@@ -116,7 +116,7 @@ setkey(RegData, SENTER)
 ################
 ## Lister av navn for sentrene
 sentfil <- paste0(filDir, "/doc/senter.csv")
-senter <- data.table::fread(sentfil, header = TRUE, encoding = "Latin-1")
+senter <- data.table::fread(sentfil, header = TRUE, encoding = "UTF-8")
 setkey(senter, Senter) #key er senter kode
 
 ## Slå sammen senternavn og dataset
@@ -181,7 +181,7 @@ ggplot(innText, aes(reorder(Navn, N), N, label = N)) +
 
 @
 
-\pagebreak
+\newpage
 
 
 \section{Antall inkluderte per senter per år}
@@ -259,7 +259,7 @@ kable(tab02all, format = "latex", booktabs = TRUE) %>%
 
 @
 
-\pagebreak
+\newpage
 
 \section{Demografiske variabler, gjennomsnitt per senter og missing}
 
@@ -467,7 +467,7 @@ kable(tabellNA, booktabs = TRUE) %>%
   kable_styling()
 @
 
-\pagebreak
+\newpage
 
 \section{Motakker av offentlig hjelp}
 
@@ -524,6 +524,247 @@ ggplot(offPro, aes(as.factor(yr), pros, group = get)) +
 
 @
 
+\newpage
+
+\section{Diagnoser}
+
+%% Plot setup
+<<diagnose-setup>>=
+
+v.diagnose <- "HOVEDDIAGNOSE"
+setnames(DataT02, v.diagnose, "diag") #rename til diag
+
+## diagnoser navn
+diagVal01 <- c("SCI", "MCI", "AD", "VaD", "DLB/PDD/FTD", "Uspesifisert demens", "Annen diagnose")
+diagTabell <- data.table(kode = 0:6, diagnose = diagVal01)
+setkey(diagTabell, kode)
+
+diagVal02 <- c("Subjectiv kognitiv svikt",
+               "Mild kognitiv svikt",
+               "Demens av Alzheimerstype",
+               "Vaskulær Demens",
+               "DLB/PDD/FTD",
+               "Uspesifisert demens",
+               "Annen diagnose")
+diagTabell01 <- data.table(kode = 0:6, diagnose = diagVal02)
+setkey(diagTabell01, kode)
+
+n.diag <- DataT02[, .N, by = .(diag)][is.na(diag), diag := 9] #NA =9
+diagNA <- n.diag$N[n.diag$diag == 9] #antall missing
+
+
+diag.tab <- n.diag[diag != 9, ]
+diagN <- diag.tab[, sum(N)] #antall inkludert
+diag.tab[, prop := N / diagN * 100] #beregn andel
+diag.tab[.(diag = 0:6, to = diagVal02), on = "diag", diagnose := i.to]
+diag.tab[, prop := round(prop, digits = 1)]
+
+diag.tab[, txtfig := paste0(diagnose, " (N=", N, ")")]
+
+## Tekst posisjon
+txtCut <- diag.tab[, max(prop)]
+diag.tab[, pos := ifelse(prop < 0.2 * txtCut, 0, 1)]
+
+title <- "Diagnoser NorKog"
+sub.title <- paste0("N = ", diagN, ", Antall missing = ", diagNA)
+y.lab <- "Prosentvis andel"
+
+position = position_dodge(width = .80)
+width = .80
+
+data.fig <- diag.tab
+
+@
+
+%% Plot output
+<<diagnose-output>>=
+
+ggplot(data.fig, aes(reorder(txtfig, prop), prop, label = prop)) +
+  geom_bar(width = width, position = position, stat = "identity", fill = colb) +
+  geom_text(data = data.fig[pos == 1], hjust = 1.3, size = 2.5) +
+  geom_text(data = data.fig[pos == 0], hjust = -0.3, size = 2.5) +
+  coord_flip() +
+  labs(title = title, subtitle = sub.title, y = y.lab, x = "") +
+  scale_y_continuous(expand = c(0, 0)) +
+  theme(
+    plot.title = element_text(size = 10, color = "black"),
+    plot.margin = unit(c(0,2,0.5,0.5), "cm"),
+    axis.text.y = element_text(size = 9, color = "black"),
+    axis.ticks.y = element_blank(),
+    axis.line.x = element_line(size = 0.5),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.title.y = element_text(size = 9),
+    axis.title.x = element_text(size = 9),
+    legend.position = "none")
+
+@
+
+\newpage
+
+\section{Diagnoser per senter}
+
+<<diagsent, results='asis'>>=
+## Antall per senter med diagnose uten missing
+v.diag <- DataT02[!is.na(diag), list(n1 = .N), by = list(Senter)]
+v.diag[, N := paste0("(", n1, ")")]
+v.diag[, n1 := NULL]
+setkey(v.diag, Senter)
+
+## variable HOVEDDIAGNOSE brukes som allerede byttet navn til "diag" fra forrige analysen
+n.diag <- DataT02[!is.na(diag), .N, by = list(Senter, diag)]
+n.diag[, `:=` (diag = as.numeric(diag), N = as.numeric(N))]
+n.diag[!is.na(diag), prop := round(N / sum(N) * 100, digits = 1), by = list(Senter)]
+setnames(n.diag, "N", "n")
+
+setkey(n.diag, Senter)
+## key(senter) - sjekke hvilken key
+
+## gir navn til diagnose fra "diagTabell"
+n.diag <- diagTabell[n.diag, on = c(kode = "diag")]
+
+## konvertere til wide
+t.diag <- dcast(n.diag, Senter ~ diagnose, value.var = "prop")
+
+## bytt missing med 0
+bNA(t.diag)
+
+## legge N kolone
+t.diag <- v.diag[t.diag, on = c(Senter = "Senter")]
+
+## gir senter navn
+s.diag <- senter[t.diag] #right outer join
+
+## tar bort kollone som ikke trenges
+del.col <- c("Senter", "Annen diagnose")
+s.diag <- s.diag[, (del.col) := NULL]
+
+## reorganisere kollone
+diag.colorder <- c("Navn", "N",
+                   "AD",
+                   "SCI",
+                   "MCI",
+                   "VaD",
+                   "Uspesifisert demens",
+                   "DLB/PDD/FTD")
+
+setcolorder(s.diag, diag.colorder)
+
+## Nytt colnavn - Navn til Senter
+setnames(s.diag, "Navn", "Senter")
+
+
+kable(s.diag, format = "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped")) %>%
+  column_spec(1, bold=T) %>%
+  add_header_above(c("" , "", "Andel per diagnoser typer (%)" = 6))
+
+@
+
+\newpage
+
+\section{Demens og MCI, per senter per år}
+
+\vspace{6mm}
+
+Demensdiagnose inkluderer AD, VaD, FTD, PDD og LBD
+
+\vspace{5mm}
+
+<<demmci, results='asis'>>=
+## Variabler å bruke
+mci <- quote(MCI)
+demens <- quote(DEMENS)
+
+
+##################
+## Demens
+#################
+demN <- DataT02[!is.na(eval(demens)), .N] #Antall svarte demens uten missing
+demData <- DataT02[!is.na(eval(demens)),] #Eksludert med NA for demens spørsmål
+n.demens <- demData[, .N, by = list(Senter, eval(demens), yr2)]
+
+n.demens[, prop := N / sum(N)*100, by = list(Senter, yr2)]
+tabell.dem <- n.demens[demens == 1, ] #slett uten demens ie. demens == 0
+
+## slett kolloner
+dem.remove <- c("demens", "N")
+tabell.dem[, (dem.remove) := NULL]
+
+## slett rows yr2 med NA
+tabell.dem <- tabell.dem[!is.na(yr2), ]
+
+## Gir senter navn
+tabell.dem2 <- senter[tabell.dem, on = c(Senter = "Senter")]
+tabell.dem3 <- dcast(tabell.dem2, Navn ~ yr2, value.var = "prop")
+
+## bytt NA til 0
+bNA(tabell.dem3)
+
+## Gir diagnose DEMENS == 1
+tabell.dem3[, diagnose := 1]
+
+###########
+## MCI
+###########
+mciN <- DataT02[!is.na(eval(mci)), .N] #Antall svarte mci uten missing
+mciData <- DataT02[!is.na(eval(mci)),] #Eksludert med NA for mci spørsmål
+n.mci <- mciData[, .N, by = list(Senter, eval(mci), yr2)]
+
+n.mci[, prop := N / sum(N)*100, by = list(Senter, yr2)]
+tabell.mci <- n.mci[mci == 1, ] #slett uten mci ie. mci == 0
+
+## slett kolloner
+mci.remove <- c("mci", "N")
+tabell.mci[, (mci.remove) := NULL]
+
+## slett rows yr2 med NA
+tabell.mci <- tabell.mci[!is.na(yr2), ]
+
+## Gir senter navn
+tabell.mci2 <- senter[tabell.mci, on = c(Senter = "Senter")]
+tabell.mci3 <- dcast(tabell.mci2, Navn ~ yr2, value.var = "prop")
+
+## bytt NA til 0
+bNA(tabell.mci3)
+
+## Gir diagnose MCI == 2
+tabell.mci3[, diagnose := 2]
+
+########################
+## Merge demens og MCI
+#######################
+
+tabell.md <- rbindlist(list(tabell.dem3, tabell.mci3))
+
+## tabell for diagnose navn
+diagname <- data.table(kode = 1:2, diagnose = c("Demensdiagnose", "MCI"))
+
+tabell.md <- diagname[tabell.md, on = c(kode = "diagnose")]
+tabell.md <- tabell.md[, kode := NULL]
+
+## reorganisere Navn og diagnose
+neworder <- c("Navn", "diagnose")
+setcolorder(tabell.md, c(neworder, setdiff(names(tabell.md), neworder)))
+
+## nytt colnavn
+setnames(tabell.md, c("Navn", "diagnose", 1000), c("Senter", "Diagnose", yrtab))
+## sortere per senter
+setkey(tabell.md, Senter, Diagnose)
+
+## telle antall kolonne for år
+colnr <- dim(tabell.md)[2] - 2
+
+kable(tabell.md, format = "latex", longtable = TRUE, booktabs = TRUE) %>%
+  kable_styling(latex_options = c("repeat_header"), repeat_header_text = c("\\textit{(fortsettelsen)}")) %>%
+  add_header_above(c("", "", "Andel per diagnoser (%)" = colnr)) %>%
+  column_spec(1, bold = T) %>%
+  column_spec(2, italic = T) %>%
+  collapse_rows(columns = 1)
+
+@
 
 
 \end{document}
