@@ -694,7 +694,7 @@ demN <- DataT02[!is.na(eval(demens)), .N] #Antall svarte demens uten missing
 demData <- DataT02[!is.na(eval(demens)),] #Eksludert med NA for demens spørsmål
 n.demens <- demData[, .N, by = list(Senter, eval(demens), yr2)]
 
-n.demens[, prop := N / sum(N)*100, by = list(Senter, yr2)]
+n.demens[, prop := round(N / sum(N)*100, digits = 1), by = list(Senter, yr2)]
 tabell.dem <- n.demens[demens == 1, ] #slett uten demens ie. demens == 0
 
 ## slett kolloner
@@ -721,7 +721,7 @@ mciN <- DataT02[!is.na(eval(mci)), .N] #Antall svarte mci uten missing
 mciData <- DataT02[!is.na(eval(mci)),] #Eksludert med NA for mci spørsmål
 n.mci <- mciData[, .N, by = list(Senter, eval(mci), yr2)]
 
-n.mci[, prop := N / sum(N)*100, by = list(Senter, yr2)]
+n.mci[, prop := round(N / sum(N)*100, digits = 1), by = list(Senter, yr2)]
 tabell.mci <- n.mci[mci == 1, ] #slett uten mci ie. mci == 0
 
 ## slett kolloner
