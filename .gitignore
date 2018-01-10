@@ -12,3 +12,4 @@ figures/
 *.fdb_latexmk
 *.fls
 *.log
+*.gz
