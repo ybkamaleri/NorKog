@@ -10,11 +10,11 @@ rm(list = ls())
 ########################
 
 ## Hvilket år skal kombineres? - endres etter behov
-yearMix <- 2008:2012
+yearMix <- 2008:2013
 
 ## Tekst posisjon inne eller utenfor bar i figur 1
-## hvor deling skal gjøres?
-deltxt <- 30
+## hvor deling skal gjøres? Alle tellene under dette tallet skal ligger utenfor søylen.
+deltxt <- 80
 @
 
 
