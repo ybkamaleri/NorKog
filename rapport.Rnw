@@ -12,7 +12,7 @@ rm(list = ls())
 
 ## Hvilket år skal kombineres/grupperes? - endres etter behov
 ## dato fra 2008 til 2013 skrives 2008:2013
-yearMix <- 2008:2013
+yearMix <- 2008:2012
 
 ## Tekst posisjon inne eller utenfor bar i figur 1
 ## hvor deling skal gjøres? Alle tellene under dette tallet skal ligger utenfor søylen.
@@ -238,7 +238,9 @@ Data[, yr2 := ifelse(yr %in% yrmix, 1000, yr)] #dummy for 2008:2012 er 1000
 Datayr <- Data[!is.na(yr), ]
 @
 
-Det er \Sexpr{yrNA} missing data i \textbf{US\_AARSTALL}. Derfor antallet er ikke lik som i forrige figur.
+Antall pasienter kan være ulik med forrige figur om det er missing data i
+innregistreringen av \texttt{US\_AARSTALL}. I denne analysen er det \textbf{\Sexpr{yrNA}} missing data i
+\texttt{US\_AARSTALL}.
 
 <<inkludert-outp, results='asis'>>=
 
@@ -789,7 +791,7 @@ kable(tabell.md, format = "latex", longtable = TRUE, booktabs = TRUE) %>%
   kable_styling(latex_options = c("repeat_header"), repeat_header_text = c("\\textit{(fortsettelsen)}")) %>%
   add_header_above(c("", "", "Andel per diagnoser (%)" = colnr)) %>%
   column_spec(1, bold = T) %>%
-  column_spec(2, italic = T) %>%
+  ##column_spec(2, italic = T) %>%
   collapse_rows(columns = 1)
 
 @
