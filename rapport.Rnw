@@ -1,3 +1,4 @@
+\documentclass{article}
 %%===========================%%
 %% Valg dynamiske variablene %%
 %%===========================%%
@@ -9,16 +10,20 @@ rm(list = ls())
 ## Valgfrie variabler ##
 ########################
 
-## Hvilket år skal kombineres? - endres etter behov
+## Hvilket år skal kombineres/grupperes? - endres etter behov
+## dato fra 2008 til 2013 skrives 2008:2013
 yearMix <- 2008:2013
 
 ## Tekst posisjon inne eller utenfor bar i figur 1
 ## hvor deling skal gjøres? Alle tellene under dette tallet skal ligger utenfor søylen.
 deltxt <- 80
+
+############################################
+## Alt under denne linjen bør ikke endres ##
+## om du ikke er kjent med R og LaTeX     ##
+############################################
+
 @
-
-
-\documentclass{article}
 
 %% kableExtra packages
 \usepackage{booktabs}
@@ -47,10 +52,27 @@ deltxt <- 80
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 
-\title{Kvartalsrapport for Norkog}
+\title{Kvartalsrapport for Norkog\vspace{-1.5cm}}
+\date{}
+
 
 \begin{document}
-\maketitle
+%% \textbf{\maketitle}
+
+%% ved bruk \maketitle lages en blank første side
+% \begin{center}
+% \textbf{\maketitle}
+% \par\large\textbf{\Sexpr{format(Sys.Date(), "%d %b %Y")}}
+% \par\noindent\rule{15cm}{0.4pt}
+% \end{center}
+
+%% Tittle
+\begingroup
+ \centering
+ \huge\textbf{Kvartalsrapport for Norkog}
+ \par\vspace{5mm}\large\textbf{\Sexpr{format(Sys.Date(), "%d %b %Y")}}
+ \par\noindent\rule{\textwidth}{0.4pt}
+\endgroup
 
 <<setup, include=FALSE>>=
 
@@ -134,8 +156,6 @@ Data <- senter[RegData] #gir navn til SENTER basert på senter listen
 @
 
 
-\maketitle
-
 \section{Antall inkluderte per senter}
 
 <<antall-setup>>=
@@ -153,7 +173,7 @@ inkl <- Data[, length(unique(Navn))] #antall senter i datasettet
 
 @
 
-Det er \Sexpr{inkl} sentre inkludert i analysen. \textit{[Legg gjerne mer tekst her om ønskelig]}
+Det er \Sexpr{inkl} sentre inkludert i analysen.
 \newline
 <<antall-output, fig.align='center'>>=
 ## Legge til gjennomsnitt hele landet
@@ -573,7 +593,7 @@ diag.tab[, txtfig := paste0(diagnose, " (N=", N, ")")]
 txtCut <- diag.tab[, max(prop)]
 diag.tab[, pos := ifelse(prop < 0.2 * txtCut, 0, 1)]
 
-title <- "Diagnoser NorKog"
+title <- "Andel og antall for diagnosekategorier i NorKog"
 sub.title <- paste0("N = ", diagN, ", Antall missing = ", diagNA)
 y.lab <- "Prosentvis andel"
 
