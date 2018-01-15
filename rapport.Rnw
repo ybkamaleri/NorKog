@@ -18,12 +18,16 @@ yearMix <- 2008:2012
 ## hvor deling skal gjøres? Alle tellene under dette tallet skal ligger utenfor søylen.
 deltxt <- 80
 
+## Språk
+## Hvis senternavn ikke vises riktig bukstaver, valg mellom "UTF-8" og "Latin-1"
+spraak <- "Latin-1"
+
 ############################################
 ## Alt under denne linjen bør ikke endres ##
 ## om du ikke er kjent med R og LaTeX     ##
 ############################################
 
-@
+  @
 
 %% kableExtra packages
 \usepackage{booktabs}
@@ -146,7 +150,7 @@ setkey(RegData, SENTER)
 ################
 ## Lister av navn for sentrene
 sentfil <- paste0(filDir, "/doc/senter.csv")
-senter <- data.table::fread(sentfil, header = TRUE, encoding = "Latin-1")
+senter <- data.table::fread(sentfil, header = TRUE, encoding = spraak)
 setkey(senter, Senter) #key er senter kode
 
 ## Slå sammen senternavn og dataset
