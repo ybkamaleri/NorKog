@@ -27,7 +27,7 @@ spraak <- "Latin-1"
 ## om du ikke er kjent med R og LaTeX     ##
 ############################################
 
-  @
+@
 
 %% kableExtra packages
 \usepackage{booktabs}
@@ -86,23 +86,24 @@ filDir <- getwd()
 
 
 ## henter pakker eller installere om ikke finnes
-inspak <- function(pkg){
+load <- function(pkg){
   nypkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(nypkg))
     install.packages(nypkg, dependencies = TRUE, repos = "http://cran.r-project.org")
+  sapply(pkg, require, character.only = TRUE)
 }
 
-pakke <- c("data.table", "ggplot2", "directlabels", "grid", "knitr", "kableExtra", "haven")
-inspak(pakke)
+pakker <- c("data.table", "ggplot2", "directlabels", "grid", "knitr", "kableExtra", "haven")
+load(pakker)
 
-## Upload libraries
-library(data.table)
-library(ggplot2)
-library(directlabels)
-library(knitr)
-library(grid)
-library(kableExtra)
-library(haven) #for å lese .sav fil
+## ## Upload libraries
+## library(data.table)
+## library(ggplot2)
+## library(directlabels)
+## library(knitr)
+## library(grid)
+## library(kableExtra)
+## library(haven) #for å lese .sav fil
 
 
 ############################
@@ -176,6 +177,7 @@ inkn <- sn - missn #antall senter uten missing data
 inkl <- Data[, length(unique(Navn))] #antall senter i datasettet
 
 @
+
 
 Det er \Sexpr{inkl} sentre inkludert i analysen.
 \newline
@@ -688,6 +690,7 @@ setcolorder(s.diag, diag.colorder)
 
 ## Nytt colnavn - Navn til Senter
 setnames(s.diag, "Navn", "Senter")
+setkey(s.diag, Senter)
 
 
 kable(s.diag, format = "latex", booktabs = TRUE) %>%
