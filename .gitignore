@@ -13,3 +13,4 @@ figures/
 *.fls
 *.log
 *.gz
+/*.Rnw#
