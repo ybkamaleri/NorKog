@@ -42,15 +42,15 @@ spraak <- "Latin-1"
 \usepackage{tabu}
 \usepackage{threeparttable}
 
-%% margin
-\usepackage{geometry}
-\geometry{
-  verbose,
-  tmargin=2.5cm,
-  bmargin=2.5cm,
-  lmargin=2.5cm,
-  rmargin=2.5cm
-}
+% %% margin
+% \usepackage{geometry}
+% \geometry{
+%   verbose,
+%   tmargin=2.5cm,
+%   bmargin=2.5cm,
+%   lmargin=2.5cm,
+%   rmargin=2.5cm
+% }
 
 %% for norske bokstaver
 \usepackage[utf8]{inputenc}
@@ -137,11 +137,9 @@ bNA <- function(DT, na = 0){
 #########
 ## DATA
 #########
-sr01 <- paste0(filDir,"/", "datakilder1.R")
-sr02 <- paste0(filDir, "/", "datakilder2.R")
-##ifelse(file.exists(sr01), source(sr01), source(sr02))
-data <- ifelse(file.exists(sr01), sr01, sr02)
-source(data)
+
+kilde <- "~/avid/norkog/datakilder1.R"
+source(kilde)
 
 setDT(RegData)
 setkey(RegData, SENTER)
