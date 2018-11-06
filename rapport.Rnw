@@ -12,7 +12,7 @@ rm(list = ls())
 
 ## Hvilket år skal kombineres/grupperes? - endres etter behov
 ## dato fra 2008 til 2013 skrives 2008:2013
-yearMix <- 2008:2012
+yearMix <- 2008:20114
 
 ## Tekst posisjon inne eller utenfor bar i figur 1
 ## hvor deling skal gjøres? Alle tellene under dette tallet skal ligger utenfor søylen.
@@ -42,15 +42,15 @@ spraak <- "Latin-1"
 \usepackage{tabu}
 \usepackage{threeparttable}
 
-% %% margin
-% \usepackage{geometry}
-% \geometry{
-%   verbose,
-%   tmargin=2.5cm,
-%   bmargin=2.5cm,
-%   lmargin=2.5cm,
-%   rmargin=2.5cm
-% }
+%% margin
+\usepackage{geometry}
+\geometry{
+  verbose,
+  tmargin=2.5cm,
+  bmargin=2.5cm,
+  lmargin=2.5cm,
+  rmargin=2.5cm
+}
 
 %% for norske bokstaver
 \usepackage[utf8]{inputenc}
