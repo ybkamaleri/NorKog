@@ -1,5 +1,8 @@
 \documentclass{article}
-%%===========================%%
+
+% !Rnw weave = knitr
+
+%% ===========================%%
 %% Valg dynamiske variablene %%
 %%===========================%%
 <<var-valg, include=FALSE, echo=FALSE, cache=FALSE>>=
